@@ -23,10 +23,14 @@ class UserProfileCard extends StatefulWidget {
 }
 
 class _UserProfileCardState extends State<UserProfileCard> {
+  // Form key for validation
+  final _formKey = GlobalKey<FormState>();
+
   // Controllers for text fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _roleController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   String? _profileImageUrl; // Stores profile image URL from Firestore
   bool _isLoading = false; // Loading indicator state
@@ -60,6 +64,7 @@ class _UserProfileCardState extends State<UserProfileCard> {
           _nameController.text = data['name'] ?? '';
           _emailController.text = data['email'] ?? '';
           _roleController.text = data['role'] ?? '';
+          _phoneController.text = data['phone'] ?? '';
           _profileImageUrl = (data['profileImage'] != null &&
                   data['profileImage'].toString().isNotEmpty)
               ? data['profileImage']
@@ -76,7 +81,11 @@ class _UserProfileCardState extends State<UserProfileCard> {
   }
 
   // Saves updated name to Firestore
-  Future<void> _saveName() async {
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
     setState(() {
@@ -89,15 +98,17 @@ class _UserProfileCardState extends State<UserProfileCard> {
           .doc(uid)
           .update({
         'name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name updated successfully')),
+        const SnackBar(content: Text('Profile updated successfully')),
       );
     } catch (e) {
-      print('Error updating name: $e');
+      print('Error updating profile: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update name')),
+        const SnackBar(content: Text('Failed to update profile')),
       );
     }
 
@@ -179,6 +190,7 @@ class _UserProfileCardState extends State<UserProfileCard> {
     _nameController.dispose();
     _emailController.dispose();
     _roleController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -206,81 +218,101 @@ class _UserProfileCardState extends State<UserProfileCard> {
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  // Profile image avatar with tap to upload
-                  GestureDetector(
-                    onTap: _pickAndUploadImage,
-                    child: CircleAvatar(
-                      radius: 55.0,
-                      backgroundColor: hexToColor("#4f4f4d"),
-                      backgroundImage: (_profileImageUrl != null)
-                          ? NetworkImage(_profileImageUrl!)
-                          : null,
-                      child: (_profileImageUrl == null)
-                          ? const Icon(Icons.person,
-                              size: 50, color: Colors.white)
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  // Name input field
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Name',
-                      border: const UnderlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20.0),
-                  // Email field (disabled)
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: UnderlineInputBorder(),
-                    ),
-                    enabled: false,
-                  ),
-                  const SizedBox(height: 16.0),
-                  // Role field (disabled)
-                  TextFormField(
-                    controller: _roleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Role',
-                      border: UnderlineInputBorder(),
-                    ),
-                    enabled: false,
-                  ),
-                  const SizedBox(height: 40.0),
-                  // Save changes button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _saveName,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: hexToColor("#4f4f4d"), // button color
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Form(
+                // ✅ added Form here
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // Profile image avatar with tap to upload
+                    GestureDetector(
+                      onTap: _pickAndUploadImage,
+                      child: CircleAvatar(
+                        radius: 55.0,
+                        backgroundColor: hexToColor("#4f4f4d"),
+                        backgroundImage: (_profileImageUrl != null)
+                            ? NetworkImage(_profileImageUrl!)
+                            : null,
+                        child: (_profileImageUrl == null)
+                            ? const Icon(Icons.person,
+                                size: 50, color: Colors.white)
+                            : null,
                       ),
-                      child: Text(
-                        'Save Changes',
-                        style: GoogleFonts.openSans(
-                          textStyle: TextStyle(
-                            fontSize: 15,
-                            color: hexToColor("#f5f2e9"), //button text color
-                            fontWeight: FontWeight.bold,
+                    ),
+                    const SizedBox(height: 20.0),
+
+                    // Email input field (non editable)
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: UnderlineInputBorder(),
+                      ),
+                      enabled: false,
+                    ),
+                    const SizedBox(height: 10.0),
+
+                    // Role combo box (non editable)
+                    TextFormField(
+                      controller: _roleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Role',
+                        border: UnderlineInputBorder(),
+                      ),
+                      enabled: false,
+                    ),
+                    const SizedBox(height: 10.0),
+
+                    // Name input field (required)
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name *',
+                        border: UnderlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10.0),
+
+                    // Phone input field (optional)
+                    TextFormField(
+                      controller: _phoneController,
+                      decoration: const InputDecoration(
+                        labelText: 'Phone',
+                        border: UnderlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 20.0),
+
+                    // Save changes button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _saveProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              hexToColor("#4f4f4d"), // button color
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        ),
+                        child: Text(
+                          'Save Changes',
+                          style: GoogleFonts.openSans(
+                            textStyle: TextStyle(
+                              fontSize: 15,
+                              color: hexToColor("#f5f2e9"), //button text color
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

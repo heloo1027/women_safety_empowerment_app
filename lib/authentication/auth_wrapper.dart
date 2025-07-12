@@ -58,9 +58,10 @@ class AuthWrapper extends StatelessWidget {
               } else if (role == 'NGO') {
                 return const NGOHomeScreen();
               } else {
-                return const Scaffold(
-                  body: Center(child: Text('Unknown role')),
-                );
+                // return const Scaffold(
+                //   body: Center(child: Text('Unknown role')),
+                // );
+                return const LoginScreen();
               }
             },
           );

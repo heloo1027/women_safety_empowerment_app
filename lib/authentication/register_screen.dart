@@ -44,9 +44,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _register() async {
     if (_formKey.currentState?.validate() ?? false) {
       try {
-        // Checks if the email is already registered
+        // Trim the email input before use
+        String trimmedEmail = _emailController.text.trim();
+
+        // Check if the email is already registered
         List<String> signInMethods =
-            await _auth.fetchSignInMethodsForEmail(_emailController.text);
+            await _auth.fetchSignInMethodsForEmail(trimmedEmail);
 
         if (signInMethods.isNotEmpty) {
           _showErrorDialog(
@@ -54,29 +57,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
           return;
         }
 
-        // Creates user account with Firebase Authentication
+        // Create user account with Firebase Authentication
         UserCredential userCredential =
             await _auth.createUserWithEmailAndPassword(
-          email: _emailController.text,
+          email: trimmedEmail,
           password: _passwordController.text,
         );
 
         User? user = userCredential.user;
 
         if (user != null) {
-          // Stores additional user details to Firestore
+          // Store additional user details to Firestore
           await _firestore.collection('users').doc(user.uid).set({
-            'uid': user.uid,
-            'email': user.email,
-            'name': _nameController.text,
+            'userID': user.uid,
+            'email': trimmedEmail,
+            'name': _nameController.text.trim(),
             'role': _selectedRole,
+            'phone': "",
+            'profileImage': "",
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
           });
 
-          // Stores user session data securely
+          // Store user session data securely
           await _secureStorage.write(key: 'userID', value: user.uid);
-          await _secureStorage.write(key: 'userEmail', value: user.email!);
+          await _secureStorage.write(key: 'userEmail', value: trimmedEmail);
 
-          // Shows success dialog and navigates to login screen
+          // Show success dialog and navigate to login screen
           _showSuccessDialog(
               'Registration successful. Please login to continue.');
         }
