@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
 import 'package:women_safety_empowerment_app/widgets/common/user_profile_card.dart';
+import 'package:women_safety_empowerment_app/widgets/woman/sos_button.dart'; // Import your SOSButton widget
 
 class WomanHomeScreen extends StatefulWidget {
   const WomanHomeScreen({super.key});
@@ -15,20 +16,16 @@ class WomanHomeScreen extends StatefulWidget {
   State<WomanHomeScreen> createState() => _WomanHomeScreenState();
 }
 
-// Main home screen for Woman user
 class _WomanHomeScreenState extends State<WomanHomeScreen> {
   int _selectedIndex = 0; // Index for BottomNavigationBar and Drawer highlight
 
-  // Function to sign out user and navigate to LoginScreen
   void _signOut(BuildContext context) async {
-    await FirebaseAuth.instance.signOut(); // Firebase sign out
+    await FirebaseAuth.instance.signOut();
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-          builder: (context) => const LoginScreen()), // Navigate to login
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
   }
 
-  // List of pages for BottomNavigationBar
   static final List<Widget> _pages = <Widget>[
     const Center(
       child: Text(
@@ -36,30 +33,22 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
       ),
     ),
-    const Center(
-      child: Text(
-        'Reports Screen Content',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    ),
-    const UserProfileCard(), // Show user profile card widget
+    const SOSButton(), // Show SOS button page
+    const UserProfileCard(),
   ];
 
-  // List of titles for app bar
   static final List<String> _titles = <String>[
     'Home',
-    'Reports',
+    'SOS',
     'Profile',
   ];
 
-  // Function to update BottomNavigationBar index
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  // Fetch user data from Firestore for the Drawer header
   Future<Map<String, dynamic>?> _fetchUserData() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
     DocumentSnapshot snapshot =
@@ -76,7 +65,6 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Displays Top App Bar title based on current selected index
         title: Text(
           _titles[_selectedIndex],
           style: GoogleFonts.openSans(
@@ -87,21 +75,18 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
         ),
         backgroundColor: hexToColor("#dddddd"),
         iconTheme: IconThemeData(
-          color: hexToColor("#4a6741"), // drawer icon color
+          color: hexToColor("#4a6741"),
         ),
       ),
 
-      // Side drawer with user info and logout
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Uses FutureBuilder to load user info from Firestore
             FutureBuilder<Map<String, dynamic>?>(
               future: _fetchUserData(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  // Show loading indicator while fetching data
                   return DrawerHeader(
                     decoration: BoxDecoration(
                       color: hexToColor("#dddddd"),
@@ -111,7 +96,6 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                     ),
                   );
                 } else if (snapshot.hasError || !snapshot.hasData) {
-                  // Show error message if fetch fails
                   return DrawerHeader(
                     decoration: BoxDecoration(
                       color: hexToColor("#dddddd"),
@@ -124,7 +108,6 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                     ),
                   );
                 } else {
-                  // Display user info in drawer header
                   var data = snapshot.data!;
                   String name = data['name'] ?? 'No Name';
                   String role = data['role'] ?? 'No Role';
@@ -137,7 +120,6 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Profile image with circle border
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -158,8 +140,7 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                                 : null,
                           ),
                         ),
-                        const SizedBox(height: 2), // between image and name
-                        // Display user name
+                        const SizedBox(height: 2),
                         Text(
                           name,
                           style: GoogleFonts.openSans(
@@ -168,10 +149,7 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(
-                            height: 2 // spacing between name and role
-                            ),
-                        // Display user role inside rounded container
+                        const SizedBox(height: 2),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8.0, vertical: 4.0),
@@ -194,13 +172,12 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
               },
             ),
 
-            // Home option in drawer
             ListTile(
               leading: Icon(
                 Icons.home,
                 color: _selectedIndex == 0
-                    ? hexToColor("#4a6741") // active color
-                    : Colors.grey, // inactive color
+                    ? hexToColor("#4a6741")
+                    : Colors.grey,
                 size: 24,
               ),
               title: Text(
@@ -208,11 +185,11 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight: _selectedIndex == 0
-                      ? FontWeight.bold // bold if selected
-                      : FontWeight.w600, // normal weight if not
+                      ? FontWeight.bold
+                      : FontWeight.w600,
                   color: _selectedIndex == 0
-                      ? hexToColor("#4a6741") // active color
-                      : Colors.grey, // inactive color
+                      ? hexToColor("#4a6741")
+                      : Colors.grey,
                 ),
               ),
               onTap: () {
@@ -223,22 +200,24 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
               },
             ),
 
-            // Reports option in drawer
             ListTile(
               leading: Icon(
                 Icons.report,
-                color:
-                    _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
+                color: _selectedIndex == 1
+                    ? hexToColor("#4a6741")
+                    : Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'Reports',
+                'SOS',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight:
-                      _selectedIndex == 1 ? FontWeight.bold : FontWeight.w600,
-                  color:
-                      _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
+                  fontWeight: _selectedIndex == 1
+                      ? FontWeight.bold
+                      : FontWeight.w600,
+                  color: _selectedIndex == 1
+                      ? hexToColor("#4a6741")
+                      : Colors.grey,
                 ),
               ),
               onTap: () {
@@ -249,22 +228,24 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
               },
             ),
 
-            // Profile option in drawer
             ListTile(
               leading: Icon(
                 Icons.person,
-                color:
-                    _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
+                color: _selectedIndex == 2
+                    ? hexToColor("#4a6741")
+                    : Colors.grey,
                 size: 24,
               ),
               title: Text(
                 'Profile',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight:
-                      _selectedIndex == 2 ? FontWeight.bold : FontWeight.w600,
-                  color:
-                      _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
+                  fontWeight: _selectedIndex == 2
+                      ? FontWeight.bold
+                      : FontWeight.w600,
+                  color: _selectedIndex == 2
+                      ? hexToColor("#4a6741")
+                      : Colors.grey,
                 ),
               ),
               onTap: () {
@@ -275,9 +256,8 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
               },
             ),
 
-            // Logout option in drawer
             ListTile(
-              leading: Icon(
+              leading: const Icon(
                 Icons.logout,
                 color: Colors.grey,
                 size: 24,
@@ -296,10 +276,8 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
         ),
       ),
 
-      // Body content shows page based on selected tab
       body: _pages[_selectedIndex],
 
-      // bottomNavigationBar to switch between pages
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: hexToColor("#dddddd"),
         items: const <BottomNavigationBarItem>[
@@ -309,7 +287,7 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.report),
-            label: 'Reports',
+            label: 'SOS',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -317,9 +295,9 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: hexToColor("#4a6741"), // Active icon color
-        unselectedItemColor: Colors.grey, // Inactive icon color
-        onTap: _onItemTapped, // Tap handler
+        selectedItemColor: hexToColor("#4a6741"),
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
         selectedLabelStyle: GoogleFonts.openSans(
           fontSize: 14,
           fontWeight: FontWeight.bold,
