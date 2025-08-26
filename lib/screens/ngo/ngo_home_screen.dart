@@ -3,10 +3,14 @@ import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
 import 'package:flutter/material.dart'; // Flutter UI framework
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
+import 'package:women_safety_empowerment_app/screens/ngo/ngo_profile_screen.dart';
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
-import 'package:women_safety_empowerment_app/widgets/common/user_profile_card.dart';
+
+import 'ngo_manage_contributions_page.dart';
+import 'ngo_receive_support_page.dart';
+import 'ngo_request_donation_page.dart';
 
 class NGOHomeScreen extends StatefulWidget {
   const NGOHomeScreen({super.key});
@@ -36,20 +40,17 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
     ),
-    const Center(
-      child: Text(
-        'Reports Screen Content',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    ),
-    const UserProfileCard(), // Show user profile card widget
+    const NGORequestDonationPage(),
+    const NGOManageContributionsPage(),
+    const NGOReceiveSupportPage()
   ];
 
   // List of titles for app bar
   static final List<String> _titles = <String>[
     'Home',
-    'Reports',
-    'Profile',
+    'Request Donation',
+    'Manage Contributions',
+    'Receive Support'
   ];
 
   // Function to update BottomNavigationBar index
@@ -223,16 +224,16 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
               },
             ),
 
-            // Reports option in drawer
+            // Request option in drawer
             ListTile(
               leading: Icon(
-                Icons.report,
+                Icons.feedback,
                 color:
                     _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'Reports',
+                'Request',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight:
@@ -249,16 +250,16 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
               },
             ),
 
-            // Profile option in drawer
+            // Manage Contributions option in drawer
             ListTile(
               leading: Icon(
-                Icons.person,
+                Icons.volunteer_activism,
                 color:
                     _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'Profile',
+                'Contributions',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight:
@@ -271,6 +272,31 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
                 Navigator.pop(context);
                 setState(() {
                   _selectedIndex = 2;
+                });
+              },
+            ),
+
+            // Receive Support option in drawer
+            ListTile(
+              leading: Icon(
+                Icons.support_agent,
+                color:
+                    _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
+              ),
+              title: Text(
+                'Support',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight:
+                      _selectedIndex == 3 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 3;
                 });
               },
             ),
@@ -292,6 +318,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
               ),
               onTap: () => _signOut(context),
             ),
+
           ],
         ),
       ),
@@ -308,12 +335,16 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.report),
-            label: 'Reports',
+            icon: Icon(Icons.feedback),
+            label: 'Request',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.volunteer_activism),
+            label: 'Contributions',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Profile',
+            label: 'Support',
           ),
         ],
         currentIndex: _selectedIndex,

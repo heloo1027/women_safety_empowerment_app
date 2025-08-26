@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
 
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
 import 'package:women_safety_empowerment_app/screens/ngo/ngo_home_screen.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_home_screen.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_app_shell.dart';
 import 'package:women_safety_empowerment_app/screens/employer/employer_home_screen.dart';
 
 // This widget decides which screen to show based on authentication and user role
@@ -52,7 +52,7 @@ class AuthWrapper extends StatelessWidget {
 
               // Navigate to the respective home screen based on role
               if (role == 'Woman') {
-                return const WomanHomeScreen();
+                return const WomanAppShell();
               } else if (role == 'Employer') {
                 return const EmployerHomeScreen();
               } else if (role == 'NGO') {

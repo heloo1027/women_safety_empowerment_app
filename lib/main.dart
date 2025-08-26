@@ -2,6 +2,9 @@ import 'package:sizer/sizer.dart'; // Responsive UI based on screen size
 import 'package:flutter/material.dart'; // Core Flutter UI package
 import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
 import 'package:firebase_core/firebase_core.dart'; // Firebase initialization
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Added for Firestore
+import 'package:firebase_auth/firebase_auth.dart'; // Added for current user check
 
 import 'package:women_safety_empowerment_app/authentication/auth_wrapper.dart'; // App initial auth routing
 
@@ -9,6 +12,31 @@ import 'package:women_safety_empowerment_app/authentication/auth_wrapper.dart'; 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(); // Initialize Firebase before running the app
+
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Request permissions
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  print('User granted permission: ${settings.authorizationStatus}');
+
+  // Save FCM token if user is logged in
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    String? token = await messaging.getToken();
+
+    if (token != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'fcmToken': token,
+      });
+      print('FCM Token saved: $token');
+    }
+  }
+
   runApp(const MyApp()); // Launch the app
 }
 

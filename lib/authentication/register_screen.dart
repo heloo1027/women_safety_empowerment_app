@@ -27,7 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Controllers for form text fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
+  // final TextEditingController _nameController = TextEditingController();
 
   // State variables for role selection and password visibility
   String _selectedRole = 'Woman'; // Default role
@@ -71,12 +71,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           await _firestore.collection('users').doc(user.uid).set({
             'userID': user.uid,
             'email': trimmedEmail,
-            'name': _nameController.text.trim(),
+            // 'name': _nameController.text.trim(),
             'role': _selectedRole,
-            'phone': "",
-            'profileImage': "",
+            // 'phone': "",
+            // 'emergencyEmail': "",
+            // 'profileImage': "",
             'createdAt': FieldValue.serverTimestamp(),
-            'updatedAt': FieldValue.serverTimestamp(),
+            // 'updatedAt': FieldValue.serverTimestamp(),
           });
 
           // Store user session data securely
@@ -163,13 +164,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 SizedBox(height: 4.h),
                 // Name input field
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'Please enter your name'
-                      : null,
-                ),
+                // TextFormField(
+                //   controller: _nameController,
+                //   decoration: const InputDecoration(labelText: 'Name'),
+                //   validator: (value) => value == null || value.isEmpty
+                //       ? 'Please enter your name'
+                //       : null,
+                // ),
                 SizedBox(height: 2.h),
                 // Email input field
                 TextFormField(

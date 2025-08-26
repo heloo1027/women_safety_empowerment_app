@@ -3,10 +3,14 @@ import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
 import 'package:flutter/material.dart'; // Flutter UI framework
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
+import 'package:women_safety_empowerment_app/screens/employer/employer_chat_list_page.dart';
+
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
 import 'package:women_safety_empowerment_app/widgets/common/user_profile_card.dart';
+import 'package:women_safety_empowerment_app/screens/employer/employer_job_screen.dart';
+import 'package:women_safety_empowerment_app/screens/employer/employer_company_profile_screen.dart';
 
 class EmployerHomeScreen extends StatefulWidget {
   const EmployerHomeScreen({super.key});
@@ -29,26 +33,17 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
   }
 
   // List of pages for BottomNavigationBar
+// List of pages for BottomNavigationBar
   static final List<Widget> _pages = <Widget>[
-    const Center(
-      child: Text(
-        'Employer Home Screen Content',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-    ),
-    const Center(
-      child: Text(
-        'Reports Screen Content',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    ),
-    const UserProfileCard(), // Show user profile card widget
+    const PostJobPage(), // 
+    const EmployerChatListPage(),
+    const EmployerCompanyProfilePage(),
   ];
 
   // List of titles for app bar
   static final List<String> _titles = <String>[
-    'Home',
-    'Reports',
+    'Job',
+    'Chat',
     'Profile',
   ];
 
@@ -194,25 +189,22 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
               },
             ),
 
-            // Home option in drawer
+            // Job option in drawer
             ListTile(
               leading: Icon(
-                Icons.home,
-                color: _selectedIndex == 0
-                    ? hexToColor("#4a6741") // active color
-                    : Colors.grey, // inactive color
+                Icons.work,
+                color:
+                    _selectedIndex == 0 ? hexToColor("#4a6741") : Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'Home',
+                'Job',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight: _selectedIndex == 0
-                      ? FontWeight.bold // bold if selected
-                      : FontWeight.w600, // normal weight if not
-                  color: _selectedIndex == 0
-                      ? hexToColor("#4a6741") // active color
-                      : Colors.grey, // inactive color
+                  fontWeight:
+                      _selectedIndex == 0 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 0 ? hexToColor("#4a6741") : Colors.grey,
                 ),
               ),
               onTap: () {
@@ -223,22 +215,25 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
               },
             ),
 
-            // Reports option in drawer
+            // Chat option in drawer
             ListTile(
               leading: Icon(
-                Icons.report,
-                color:
-                    _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
+                Icons.home,
+                color: _selectedIndex == 1
+                    ? hexToColor("#4a6741") // active color
+                    : Colors.grey, // inactive color
                 size: 24,
               ),
               title: Text(
-                'Reports',
+                'Chat',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight:
-                      _selectedIndex == 1 ? FontWeight.bold : FontWeight.w600,
-                  color:
-                      _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
+                  fontWeight: _selectedIndex == 1
+                      ? FontWeight.bold // bold if selected
+                      : FontWeight.w600, // normal weight if not
+                  color: _selectedIndex == 1
+                      ? hexToColor("#4a6741") // active color
+                      : Colors.grey, // inactive color
                 ),
               ),
               onTap: () {
@@ -304,12 +299,12 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
         backgroundColor: hexToColor("#dddddd"),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+            icon: Icon(Icons.work),
+            label: 'Job',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.report),
-            label: 'Reports',
+            icon: Icon(Icons.message),
+            label: 'Chat',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

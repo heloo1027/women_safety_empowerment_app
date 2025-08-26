@@ -3,20 +3,30 @@ import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
 import 'package:flutter/material.dart'; // Flutter UI framework
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
+import 'package:women_safety_empowerment_app/screens/woman/woman_view_services_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_chat_list_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_chat_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_my_services_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_my_offer_service_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_profile_screen.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_job_screen.dart';
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/woman/sos_button.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
-import 'package:women_safety_empowerment_app/widgets/common/user_profile_card.dart';
-import 'package:women_safety_empowerment_app/widgets/woman/sos_button.dart'; // Import your SOSButton widget
+//import 'package:women_safety_empowerment_app/widgets/common/user_profile_card.dart';
+import 'package:women_safety_empowerment_app/screens/woman/notifications_screen.dart';
 
-class WomanHomeScreen extends StatefulWidget {
-  const WomanHomeScreen({super.key});
+import 'woman_view_ngo_page.dart';
+
+class WomanAppShell extends StatefulWidget {
+  const WomanAppShell({super.key});
 
   @override
-  State<WomanHomeScreen> createState() => _WomanHomeScreenState();
+  State<WomanAppShell> createState() => _WomanAppShellState();
 }
 
-class _WomanHomeScreenState extends State<WomanHomeScreen> {
+class _WomanAppShellState extends State<WomanAppShell> {
   int _selectedIndex = 0; // Index for BottomNavigationBar and Drawer highlight
 
   void _signOut(BuildContext context) async {
@@ -27,18 +37,15 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
   }
 
   static final List<Widget> _pages = <Widget>[
-    const Center(
-      child: Text(
-        'Woman Home Screen Content',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-    ),
+    const WomanJobScreen(),
+    const WomanChatListPage(),
     const SOSButton(), // Show SOS button page
-    const UserProfileCard(),
+    const WomanProfileScreen(),
   ];
 
   static final List<String> _titles = <String>[
-    'Home',
+    'Job',
+    'Chat',
     'SOS',
     'Profile',
   ];
@@ -51,14 +58,28 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
 
   Future<Map<String, dynamic>?> _fetchUserData() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
-    DocumentSnapshot snapshot =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-    if (snapshot.exists) {
-      return snapshot.data() as Map<String, dynamic>;
-    } else {
-      return null;
-    }
+    // Fetch user data (name, role, email)
+    DocumentSnapshot userSnap =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final userData =
+        userSnap.exists ? userSnap.data() as Map<String, dynamic> : {};
+
+    // Fetch profile image from womanProfiles
+    DocumentSnapshot profileSnap = await FirebaseFirestore.instance
+        .collection('womanProfiles')
+        .doc(uid)
+        .get();
+    final profileData =
+        profileSnap.exists ? profileSnap.data() as Map<String, dynamic> : {};
+
+    // Merge data
+    return {
+      'name': userData['name'] ?? 'No Name',
+      'role': userData['role'] ?? 'No Role',
+      'email': userData['email'] ?? '',
+      'profileImage': profileData['profileImage'] ?? '',
+    };
   }
 
   @override
@@ -78,7 +99,6 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
           color: hexToColor("#4a6741"),
         ),
       ),
-
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -109,7 +129,7 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                   );
                 } else {
                   var data = snapshot.data!;
-                  String name = data['name'] ?? 'No Name';
+                  String email = data['email'] ?? 'No email';
                   String role = data['role'] ?? 'No Role';
                   String imageUrl = data['profileImage'] ?? '';
 
@@ -142,7 +162,7 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          name,
+                          email,
                           style: GoogleFonts.openSans(
                             color: hexToColor("#4a6741"),
                             fontSize: 18,
@@ -171,25 +191,67 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                 }
               },
             ),
-
             ListTile(
               leading: Icon(
-                Icons.home,
-                color: _selectedIndex == 0
-                    ? hexToColor("#4a6741")
-                    : Colors.grey,
+                Icons.home_repair_service,
+                color: Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'Home',
+                'All Services',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight: _selectedIndex == 0
-                      ? FontWeight.bold
-                      : FontWeight.w600,
-                  color: _selectedIndex == 0
-                      ? hexToColor("#4a6741")
-                      : Colors.grey,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const WomanViewServicesPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.home_repair_service,
+                color: Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'Offer Services',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const WomanMyServicesPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.work,
+                color:
+                    _selectedIndex == 0 ? hexToColor("#4a6741") : Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'Job',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight:
+                      _selectedIndex == 0 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 0 ? hexToColor("#4a6741") : Colors.grey,
                 ),
               ),
               onTap: () {
@@ -199,25 +261,21 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                 });
               },
             ),
-
             ListTile(
               leading: Icon(
-                Icons.report,
-                color: _selectedIndex == 1
-                    ? hexToColor("#4a6741")
-                    : Colors.grey,
+                Icons.message,
+                color:
+                    _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'SOS',
+                'Chat',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight: _selectedIndex == 1
-                      ? FontWeight.bold
-                      : FontWeight.w600,
-                  color: _selectedIndex == 1
-                      ? hexToColor("#4a6741")
-                      : Colors.grey,
+                  fontWeight:
+                      _selectedIndex == 1 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
                 ),
               ),
               onTap: () {
@@ -227,25 +285,21 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                 });
               },
             ),
-
             ListTile(
               leading: Icon(
-                Icons.person,
-                color: _selectedIndex == 2
-                    ? hexToColor("#4a6741")
-                    : Colors.grey,
+                Icons.report,
+                color:
+                    _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'Profile',
+                'SOS',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight: _selectedIndex == 2
-                      ? FontWeight.bold
-                      : FontWeight.w600,
-                  color: _selectedIndex == 2
-                      ? hexToColor("#4a6741")
-                      : Colors.grey,
+                  fontWeight:
+                      _selectedIndex == 2 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
                 ),
               ),
               onTap: () {
@@ -255,7 +309,76 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
                 });
               },
             ),
-
+            ListTile(
+              leading: Icon(
+                Icons.person,
+                color:
+                    _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'Profile',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight:
+                      _selectedIndex == 3 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 3;
+                });
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.notifications,
+                color: Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'Notifications',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotificationsPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.group,
+                color: Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'NGO',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const WomanViewNGOPage()),
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(
                 Icons.logout,
@@ -275,15 +398,17 @@ class _WomanHomeScreenState extends State<WomanHomeScreen> {
           ],
         ),
       ),
-
       body: _pages[_selectedIndex],
-
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: hexToColor("#dddddd"),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+            icon: Icon(Icons.work),
+            label: 'Job',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.message),
+            label: 'Chat',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.report),

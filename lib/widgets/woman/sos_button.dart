@@ -1,11 +1,12 @@
-import 'package:sizer/sizer.dart'; // Responsive UI based on screen size
-import 'package:flutter/material.dart'; // Flutter UI framework
-import 'package:geolocator/geolocator.dart'; // For location service
-import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
-import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
-import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sizer/sizer.dart';
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/services/fcm_service.dart';
 
 class SOSButton extends StatefulWidget {
   const SOSButton({super.key});
@@ -15,42 +16,92 @@ class SOSButton extends StatefulWidget {
 }
 
 class _SOSButtonState extends State<SOSButton> {
-  bool _isLoading = false; // Tracks loading state when sending SOS
+  bool _isLoading = false;
 
-  // Function to handle sending SOS
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Center(
+          child: ElevatedButton(
+            onPressed: _sendSos,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: hexToColor("#ee6969"),
+              shape: const CircleBorder(),
+              padding: const EdgeInsets.all(50),
+              elevation: 10,
+              shadowColor: Colors.redAccent,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 8.h,
+                  color: Colors.white,
+                ),
+                SizedBox(height: 1.h),
+                Text(
+                  'SEND SOS',
+                  style: GoogleFonts.openSans(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17.sp,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_isLoading)
+          Container(
+            color: Colors.black45,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          ),
+      ],
+    );
+  }
+
   Future<void> _sendSos() async {
-    setState(() {
-      _isLoading = true; // Start loading spinner
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // Check location permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        // If denied, request permission
-        permission = await Geolocator.requestPermission();
-        if (permission != LocationPermission.always &&
-            permission != LocationPermission.whileInUse) {
-          // If permission is still denied, show error and exit
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission denied')),
-          );
-          setState(() {
-            _isLoading = false; // Stop loading spinner
-          });
-          return;
-        }
+      // 1️⃣ Check location permission
+      if (!await _checkLocationPermission()) {
+        setState(() => _isLoading = false);
+        return;
       }
 
-      // Get current GPS position with high accuracy
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-
-      // Get current Firebase user ID
+      // 2️⃣ Get user ID & GPS position
       String uid = FirebaseAuth.instance.currentUser!.uid;
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
 
-      // Save SOS report to Firestore under 'sos_reports' collection
+      // 3️⃣ Fetch emergency email
+      String? emergencyEmail = await _getEmergencyEmail(uid);
+      if (emergencyEmail == null) {
+        _showSnack('No emergency email found for this user');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 4️⃣ Fetch emergency contact info from users
+      Map<String, dynamic>? contactInfo =
+          await _getEmergencyContact(emergencyEmail);
+      if (contactInfo == null) {
+        _showSnack('Emergency contact not found');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 5️⃣ Send notification
+      await _notifyEmergencyContact(contactInfo, position);
+
+      // 6️⃣ Save SOS report
       await FirebaseFirestore.instance.collection('sos_reports').add({
         'userID': uid,
         'latitude': position.latitude,
@@ -58,62 +109,76 @@ class _SOSButtonState extends State<SOSButton> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // Show success message to user
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('SOS sent successfully')),
-      );
+      _showSnack('SOS sent successfully');
     } catch (e) {
-      // Print error to console and show failure message
       print('SOS Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to send SOS')),
-      );
+      _showSnack('Failed to send SOS');
     }
 
-    setState(() {
-      _isLoading = false; // Stop loading spinner after process
-    });
+    setState(() => _isLoading = false);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: _isLoading
-            // If loading, show CircularProgressIndicator
-            ? const CircularProgressIndicator()
-            // Else show redesigned SOS button
-            : ElevatedButton(
-                onPressed: _sendSos,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: hexToColor("#ee6969"),
-                  shape: const CircleBorder(),
-                  padding: const EdgeInsets.all(50), // large circular padding
-                  elevation: 10,
-                  shadowColor: Colors.redAccent,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      size: 8.h, 
-                      color: Colors.white,
-                    ),
-                    SizedBox(height: 1.h), 
-                    Text(
-                      'SEND SOS',
-                      style: GoogleFonts.openSans(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17.sp, 
-                        color: Colors.white, 
-                        letterSpacing: 1.2, 
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-      ),
-    );
+  Future<bool> _checkLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      permission = await Geolocator.requestPermission();
+      if (permission != LocationPermission.always &&
+          permission != LocationPermission.whileInUse) {
+        _showSnack('Location permission denied');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<String?> _getEmergencyEmail(String uid) async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('womanProfiles')
+        .doc(uid)
+        .get();
+    if (doc.exists && doc['emergencyEmail'] != null) {
+      return doc['emergencyEmail'];
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> _getEmergencyContact(String email) async {
+    QuerySnapshot query = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
+    if (query.docs.isNotEmpty) {
+      var doc = query.docs.first;
+      return {
+        'userID': doc.id,
+        'fcmToken': doc['fcmToken'],
+      };
+    }
+    return null;
+  }
+
+  Future<void> _notifyEmergencyContact(
+      Map<String, dynamic> contactInfo, Position position) async {
+    String notificationTitle = '🚨 SOS Alert: Your Friend Needs Help!';
+    String notificationBody =
+        'Your friend (${FirebaseAuth.instance.currentUser!.email}) is in an emergency at https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
+
+    if (contactInfo['fcmToken'] != null) {
+      await sendPushNotification(
+          contactInfo['fcmToken'], notificationTitle, notificationBody);
+
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'toUserID': contactInfo['userID'],
+        'title': notificationTitle,
+        'body': notificationBody,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
