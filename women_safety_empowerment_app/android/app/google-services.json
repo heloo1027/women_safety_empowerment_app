@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "966041704918",
+    "project_id": "womensafetyempowermentapp",
+    "storage_bucket": "womensafetyempowermentapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966041704918:android:9b45ab3f37e93989dc2c77",
+        "android_client_info": {
+          "package_name": "com.example.women_safety_empowerment_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDY_f-VGCitJx_YH3qkc4VrFMLhOfLokZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
