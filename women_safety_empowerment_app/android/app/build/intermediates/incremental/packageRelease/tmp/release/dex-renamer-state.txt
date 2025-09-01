@@ -1,4 +1,0 @@
-#Sun Jul 13 01:23:48 MYT 2025
-base.0=C\:\\flutterProject\\fyp\\women_safety_empowerment_app\\android\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
-path.0=classes.dex
-renamed.0=classes.dex
