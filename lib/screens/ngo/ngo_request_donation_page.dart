@@ -11,7 +11,7 @@ class NGORequestDonationPage extends StatefulWidget {
 
 class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
   final categories = [
-    'Money',
+    'Funds',
     'Sanitary Products',
     'Clothes',
     'Essentials',

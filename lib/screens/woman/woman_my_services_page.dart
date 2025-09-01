@@ -30,7 +30,7 @@ class WomanMyServicesPage extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => WomanMyManageServicePage(
                     userId: userId,
-                    serviceId: '',
+                    serviceId: null,
                     existingData: {},
                   ),
                 ),

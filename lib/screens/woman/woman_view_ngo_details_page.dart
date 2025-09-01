@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'woman_chat_page.dart'; // make sure this path matches your project
+import 'package:firebase_auth/firebase_auth.dart'; // ✅ Import auth
+import 'woman_chat_page.dart';
 
-class WomanViewNGODetailsPage extends StatelessWidget {
-  final String ngoId; // Add NGO ID to fetch requests
+class WomanViewNGODetailsPage extends StatefulWidget {
+  final String ngoId;
   final String name;
   final String phone;
   final String description;
@@ -19,6 +20,67 @@ class WomanViewNGODetailsPage extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<WomanViewNGODetailsPage> createState() =>
+      _WomanViewNGODetailsPageState();
+}
+
+class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Dropdown + Text Controllers
+  String? _selectedCategory;
+  final TextEditingController _itemController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+
+  final List<String> _categories = [
+    "Funds",
+    "Sanitary Products",
+    "Clothes",
+    "Essentials",
+    "Food",
+    "Medicine",
+    "Shelter Supplies",
+    "Other",
+  ];
+
+  Future<void> _submitRequest() async {
+    final user = FirebaseAuth.instance.currentUser; // ✅ Get logged in user
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You must be logged in to make a request")),
+      );
+      return;
+    }
+
+    if (_formKey.currentState!.validate()) {
+      await FirebaseFirestore.instance.collection('womanRequests').add({
+        "ngoId": widget.ngoId,
+        "womanId": user.uid, // ✅ Save the logged-in woman’s UID
+        "category": _selectedCategory,
+        "item": _itemController.text.trim(),
+        "quantity": _quantityController.text.trim(),
+        "description": _descriptionController.text.trim(),
+        "status": "Pending",
+        "createdAt": FieldValue.serverTimestamp(),
+      });
+
+      _itemController.clear();
+      _quantityController.clear();
+      _descriptionController.clear();
+      setState(() {
+        _selectedCategory = null;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Request submitted successfully")),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("NGO Details")),
@@ -30,9 +92,10 @@ class WomanViewNGODetailsPage extends StatelessWidget {
             Center(
               child: CircleAvatar(
                 radius: 50,
-                backgroundImage:
-                    imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                child: imageUrl.isEmpty
+                backgroundImage: widget.imageUrl.isNotEmpty
+                    ? NetworkImage(widget.imageUrl)
+                    : null,
+                child: widget.imageUrl.isEmpty
                     ? const Icon(Icons.group, size: 50)
                     : null,
               ),
@@ -40,7 +103,7 @@ class WomanViewNGODetailsPage extends StatelessWidget {
             const SizedBox(height: 16),
             Center(
               child: Text(
-                name,
+                widget.name,
                 style:
                     const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
@@ -50,14 +113,12 @@ class WomanViewNGODetailsPage extends StatelessWidget {
               children: [
                 const Icon(Icons.phone, size: 20),
                 const SizedBox(width: 8),
-                Text(phone, style: const TextStyle(fontSize: 16)),
+                Text(widget.phone, style: const TextStyle(fontSize: 16)),
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              description,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(widget.description, style: const TextStyle(fontSize: 16)),
+
             const SizedBox(height: 24),
             const Text(
               "Donation Requests",
@@ -69,7 +130,7 @@ class WomanViewNGODetailsPage extends StatelessWidget {
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('ngoRequests')
-                  .where('ngoId', isEqualTo: ngoId)
+                  .where('ngoId', isEqualTo: widget.ngoId)
                   .where('status', whereIn: ['Open', 'In Progress'])
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
@@ -82,10 +143,8 @@ class WomanViewNGODetailsPage extends StatelessWidget {
                 }
 
                 final requests = snapshot.data?.docs ?? [];
-
                 if (requests.isEmpty) {
-                  return const Text(
-                      "No open or in-progress donation requests.");
+                  return const Text("No open or in-progress donation requests.");
                 }
 
                 return ListView.builder(
@@ -126,7 +185,7 @@ class WomanViewNGODetailsPage extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => WomanChatPage(
-                                      receiverId: ngoId, // ngoId for chat
+                                      receiverId: widget.ngoId,
                                     ),
                                   ),
                                 );
@@ -139,6 +198,77 @@ class WomanViewNGODetailsPage extends StatelessWidget {
                   },
                 );
               },
+            ),
+
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 16),
+            const Text(
+              "Request Donation from NGO",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: "Category",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _categories
+                        .map((cat) =>
+                            DropdownMenuItem(value: cat, child: Text(cat)))
+                        .toList(),
+                    onChanged: (val) {
+                      setState(() => _selectedCategory = val);
+                    },
+                    validator: (value) =>
+                        value == null ? "Select a category" : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _itemController,
+                    decoration: const InputDecoration(
+                      labelText: "Item (e.g., Rice, Pads, Jacket)",
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? "Enter item" : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _quantityController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: "Quantity",
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? "Enter quantity" : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: "Description",
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) => value == null || value.isEmpty
+                        ? "Enter description"
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _submitRequest,
+                    icon: const Icon(Icons.send),
+                    label: const Text("Submit Request"),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

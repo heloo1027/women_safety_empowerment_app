@@ -3,11 +3,12 @@ import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
 import 'package:flutter/material.dart'; // Flutter UI framework
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
-import 'package:women_safety_empowerment_app/screens/ngo/ngo_profile_screen.dart';
+import 'package:women_safety_empowerment_app/screens/ngo/ngo_profile_page.dart';
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
 
+import 'ngo_chat_list_page.dart';
 import 'ngo_manage_contributions_page.dart';
 import 'ngo_receive_support_page.dart';
 import 'ngo_request_donation_page.dart';
@@ -19,7 +20,7 @@ class NGOHomeScreen extends StatefulWidget {
   State<NGOHomeScreen> createState() => _NGOHomeScreenState();
 }
 
-// Main home screen for Woman user
+// Main home screen for NGO user
 class _NGOHomeScreenState extends State<NGOHomeScreen> {
   int _selectedIndex = 0; // Index for BottomNavigationBar and Drawer highlight
 
@@ -33,24 +34,21 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
   }
 
   // List of pages for BottomNavigationBar
-  static final List<Widget> _pages = <Widget>[
-    const Center(
-      child: Text(
-        'NGO Home Screen Content',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-    ),
+  final List<Widget> _pages = <Widget>[
+    const NGOChatListPage(),
     const NGORequestDonationPage(),
     const NGOManageContributionsPage(),
-    const NGOReceiveSupportPage()
+    const NGOReceiveSupportPage(),
+    const NGOProfileScreen(),
   ];
 
   // List of titles for app bar
-  static final List<String> _titles = <String>[
-    'Home',
+  final List<String> _titles = <String>[
+    'Chat',
     'Request Donation',
     'Manage Contributions',
-    'Receive Support'
+    'Receive Support',
+    'Profile',
   ];
 
   // Function to update BottomNavigationBar index
@@ -63,14 +61,26 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
   // Fetch user data from Firestore for the Drawer header
   Future<Map<String, dynamic>?> _fetchUserData() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
-    DocumentSnapshot snapshot =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-    if (snapshot.exists) {
-      return snapshot.data() as Map<String, dynamic>;
-    } else {
-      return null;
-    }
+    // Fetch basic user info
+    DocumentSnapshot userSnap =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final userData =
+        userSnap.exists ? userSnap.data() as Map<String, dynamic> : {};
+
+    // Fetch NGO profile info (image, details)
+    DocumentSnapshot profileSnap = await FirebaseFirestore.instance
+        .collection('ngoProfiles')
+        .doc(uid)
+        .get();
+    final profileData =
+        profileSnap.exists ? profileSnap.data() as Map<String, dynamic> : {};
+
+    return {
+      'name': userData['name'] ?? 'No Name',
+      'role': userData['role'] ?? 'No Role',
+      'profileImage': profileData['profileImage'] ?? '',
+    };
   }
 
   @override
@@ -198,14 +208,14 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
             // Home option in drawer
             ListTile(
               leading: Icon(
-                Icons.home,
+                Icons.chat,
                 color: _selectedIndex == 0
                     ? hexToColor("#4a6741") // active color
                     : Colors.grey, // inactive color
                 size: 24,
               ),
               title: Text(
-                'Home',
+                'Chat',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight: _selectedIndex == 0
@@ -301,6 +311,31 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
               },
             ),
 
+            // Profile option in drawer
+            ListTile(
+              leading: Icon(
+                Icons.person,
+                color:
+                    _selectedIndex == 4 ? hexToColor("#4a6741") : Colors.grey,
+              ),
+              title: Text(
+                'Profile',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight:
+                      _selectedIndex == 4 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 4 ? hexToColor("#4a6741") : Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 4;
+                });
+              },
+            ),
+
             // Logout option in drawer
             ListTile(
               leading: Icon(
@@ -318,7 +353,6 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
               ),
               onTap: () => _signOut(context),
             ),
-
           ],
         ),
       ),
@@ -331,8 +365,8 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
         backgroundColor: hexToColor("#dddddd"),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+            icon: Icon(Icons.chat),
+            label: 'Chat',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.feedback),
@@ -343,8 +377,12 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
             label: 'Contributions',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.support_agent),
             label: 'Support',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,

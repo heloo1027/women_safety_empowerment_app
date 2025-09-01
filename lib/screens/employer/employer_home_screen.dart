@@ -5,12 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
 import 'package:women_safety_empowerment_app/screens/employer/employer_chat_list_page.dart';
 
-
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
-import 'package:women_safety_empowerment_app/widgets/common/user_profile_card.dart';
 import 'package:women_safety_empowerment_app/screens/employer/employer_job_screen.dart';
-import 'package:women_safety_empowerment_app/screens/employer/employer_company_profile_screen.dart';
+import 'package:women_safety_empowerment_app/screens/employer/employer_profile_page.dart';
 
 class EmployerHomeScreen extends StatefulWidget {
   const EmployerHomeScreen({super.key});
@@ -32,12 +30,11 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
     );
   }
 
-  // List of pages for BottomNavigationBar
 // List of pages for BottomNavigationBar
   static final List<Widget> _pages = <Widget>[
-    const PostJobPage(), // 
+    const PostJobPage(), //
     const EmployerChatListPage(),
-    const EmployerCompanyProfilePage(),
+    const EmployerProfilePage(),
   ];
 
   // List of titles for app bar

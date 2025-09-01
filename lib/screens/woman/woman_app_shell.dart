@@ -8,7 +8,7 @@ import 'package:women_safety_empowerment_app/screens/woman/woman_chat_list_page.
 import 'package:women_safety_empowerment_app/screens/woman/woman_chat_page.dart';
 import 'package:women_safety_empowerment_app/screens/woman/woman_my_services_page.dart';
 import 'package:women_safety_empowerment_app/screens/woman/woman_my_offer_service_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_profile_screen.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_profile_page.dart';
 import 'package:women_safety_empowerment_app/screens/woman/woman_job_screen.dart';
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';

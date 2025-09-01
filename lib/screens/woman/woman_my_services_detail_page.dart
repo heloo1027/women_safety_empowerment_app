@@ -96,13 +96,17 @@ class WomanMyServiceDetailPage extends StatelessWidget {
                 .orderBy('createdAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                // ⏳ only while loading first data
                 return const Center(child: CircularProgressIndicator());
               }
-              final ratingDocs = snapshot.data!.docs;
-              if (ratingDocs.isEmpty) {
-                return const Text("No ratings or comments yet.");
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                // 📭 no ratings yet
+                return const Text("This service is not rated yet.");
               }
+
+              final ratingDocs = snapshot.data!.docs;
               return Column(
                 children: ratingDocs.map((doc) {
                   final rData = doc.data() as Map<String, dynamic>;

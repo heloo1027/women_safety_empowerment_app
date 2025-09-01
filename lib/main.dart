@@ -6,7 +6,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Added for Firestore
 import 'package:firebase_auth/firebase_auth.dart'; // Added for current user check
 
-import 'package:women_safety_empowerment_app/authentication/auth_wrapper.dart'; // App initial auth routing
+import 'package:women_safety_empowerment_app/authentication/auth_wrapper.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart'; // App initial auth routing
 
 // Main entry point of the app
 void main() async {
@@ -30,7 +31,10 @@ void main() async {
     String? token = await messaging.getToken();
 
     if (token != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
         'fcmToken': token,
       });
       print('FCM Token saved: $token');
@@ -50,12 +54,20 @@ class MyApp extends StatelessWidget {
     return Sizer(
       builder: (context, orientation, deviceType) {
         return MaterialApp(
-          debugShowCheckedModeBanner: false, // Removes the debug banner on top right
+          debugShowCheckedModeBanner:
+              false, // Removes the debug banner on top right
           title: 'Sisters', // App title
 
           // Theme configuration
           theme: ThemeData(
-            primarySwatch: Colors.green, // Default primary colour swatch for app
+            primarySwatch:
+                Colors.green, // Default primary colour swatch for app
+            colorScheme: ColorScheme.fromSwatch(
+              primarySwatch:
+                  Colors.green, // Use the green swatch to derive the scheme
+            ).copyWith(
+              primary: hexToColor("#4a6741"), // Set a specific primary color
+            ),
 
             // Global text selection theme (cursor and selection highlight colours)
             textSelectionTheme: const TextSelectionThemeData(
@@ -67,10 +79,13 @@ class MyApp extends StatelessWidget {
             // Global InputDecorationTheme for TextFormFields/TextFields
             inputDecorationTheme: InputDecorationTheme(
               focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF000000)), // Black underline when focused
+                borderSide: BorderSide(
+                    color: Color(0xFF000000)), // Black underline when focused
               ),
               enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF000000)), // Black underline when enabled but not focused
+                borderSide: BorderSide(
+                    color: Color(
+                        0xFF000000)), // Black underline when enabled but not focused
               ),
               labelStyle: GoogleFonts.lato(
                 // use Lato for labels
@@ -92,8 +107,23 @@ class MyApp extends StatelessWidget {
             textTheme: GoogleFonts.openSansTextTheme(
               Theme.of(context).textTheme,
             ),
+
+            // This theme will be applied to all TextButtons
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: hexToColor("#4a6741"),
+              ).copyWith(
+                // The text style, including fontWeight, is part of the button's overall theme
+                textStyle: MaterialStateProperty.all(
+                  const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
           ),
-          // The first screen loaded 
+
+          // The first screen loaded
           // AuthWrapper decides whether to show login, register, or home based on auth state
           home: const AuthWrapper(),
         );
