@@ -1,13 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:women_safety_empowerment_app/services/send_message_notification.dart';
+import 'package:women_safety_empowerment_app/widgets/common/chat_page_styles.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class WomanChatPage extends StatefulWidget {
-  final String receiverId; // 👩 The other user (woman, employer, or NGO)
+  final String receiverId;
+  final String receiverName;
 
   const WomanChatPage({
     Key? key,
     required this.receiverId,
+    required this.receiverName,
   }) : super(key: key);
 
   @override
@@ -18,50 +23,9 @@ class _WomanChatPageState extends State<WomanChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
-  /// Unique chatId based on both user IDs (order-independent)
   String get chatId {
     final ids = [currentUser!.uid, widget.receiverId]..sort();
     return ids.join("_");
-  }
-
-  Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
-    final message = _messageController.text.trim();
-
-    final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatId);
-
-    // Save message
-    await chatRef.collection('messages').add({
-      "senderId": currentUser!.uid,
-      "receiverId": widget.receiverId,
-      "message": message,
-      "sentAt": FieldValue.serverTimestamp(),
-      "isRead": false,
-    });
-
-    // Update chat metadata
-    await chatRef.set({
-      "participants": [currentUser!.uid, widget.receiverId],
-      "lastMessage": message,
-      "lastMessageTime": FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    _messageController.clear();
-  }
-
-  /// Mark all unread messages as read
-  void _markAsRead() async {
-    final unreadMessages = await FirebaseFirestore.instance
-        .collection("chats")
-        .doc(chatId)
-        .collection("messages")
-        .where("receiverId", isEqualTo: currentUser!.uid)
-        .where("isRead", isEqualTo: false)
-        .get();
-
-    for (var doc in unreadMessages.docs) {
-      doc.reference.update({"isRead": true});
-    }
   }
 
   @override
@@ -71,10 +35,144 @@ class _WomanChatPageState extends State<WomanChatPage> {
   }
 
   @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _markAsRead() async {
+    try {
+      final unreadMessages = await FirebaseFirestore.instance
+          .collection("chats")
+          .doc(chatId)
+          .collection("messages")
+          .where("receiverId", isEqualTo: currentUser!.uid)
+          .where("isRead", isEqualTo: false)
+          .get();
+
+      for (var doc in unreadMessages.docs) {
+        await doc.reference.update({"isRead": true});
+      }
+    } catch (e) {
+      debugPrint("Error marking messages as read: $e");
+    }
+  }
+
+  void _handleSendButton() {
+    final message = _messageController.text.trim();
+    if (message.isEmpty) return;
+
+    _messageController.clear();
+    _sendMessage(message);
+  }
+
+  Future<void> _sendMessage(String message) async {
+    try {
+      final chatRef =
+          FirebaseFirestore.instance.collection('chats').doc(chatId);
+
+      await chatRef.collection('messages').add({
+        "senderId": currentUser!.uid,
+        "receiverId": widget.receiverId,
+        "message": message,
+        "sentAt": FieldValue.serverTimestamp(),
+        "isRead": false,
+      });
+
+      await chatRef.set({
+        "participants": [currentUser!.uid, widget.receiverId],
+        "lastMessage": message,
+        "lastMessageTime": FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // Push notification logic (same as original)
+      final receiverDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.receiverId)
+          .get();
+
+      final receiverData = receiverDoc.data();
+      String senderName = await _getSenderName();
+
+      if (receiverDoc.exists && receiverData?['fcmToken'] != null) {
+        final token = receiverData!['fcmToken'];
+
+        await FirebaseFirestore.instance.collection('notifications').add({
+          "toUserID": widget.receiverId,
+          "title": "New message from $senderName",
+          "body": message,
+          "timestamp": FieldValue.serverTimestamp(),
+        });
+
+        await sendMessageNotification(
+          token: token,
+          title: "New message from $senderName",
+          body: message,
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error sending message: $e")),
+      );
+    }
+
+    _messageController.clear();
+  }
+
+  Future<String> _getSenderName() async {
+    String senderName = "Someone";
+    final senderDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser!.uid)
+        .get();
+    final senderData = senderDoc.data();
+
+    if (senderData != null && senderData.containsKey('role')) {
+      final role = senderData['role'];
+
+      if (role == 'Woman') {
+        final womanDoc = await FirebaseFirestore.instance
+            .collection('womanProfiles')
+            .doc(currentUser!.uid)
+            .get();
+        final womanData = womanDoc.data();
+        if (womanData != null && womanData.containsKey('name')) {
+          senderName = womanData['name'];
+        }
+      } else if (role == 'Employer') {
+        final companyDoc = await FirebaseFirestore.instance
+            .collection('companyProfiles')
+            .doc(currentUser!.uid)
+            .get();
+        final companyData = companyDoc.data();
+        if (companyData != null && companyData.containsKey('companyName')) {
+          senderName = companyData['companyName'];
+        }
+      } else if (role == 'NGO') {
+        final ngoDoc = await FirebaseFirestore.instance
+            .collection('ngoProfiles')
+            .doc(currentUser!.uid)
+            .get();
+        final ngoData = ngoDoc.data();
+        if (ngoData != null && ngoData.containsKey('name')) {
+          senderName = ngoData['name'];
+        }
+      }
+    }
+
+    return senderName;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Chat"),
+      resizeToAvoidBottomInset: true,
+      appBar: buildStyledAppBar(
+        title: widget.receiverName,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Column(
         children: [
@@ -103,21 +201,14 @@ class _WomanChatPageState extends State<WomanChatPage> {
                   itemBuilder: (context, index) {
                     final msg = messages[index];
                     final isMe = msg['senderId'] == currentUser!.uid;
+                    final previousMsg = index < messages.length - 1
+                        ? messages[index + 1]
+                        : null;
 
-                    return Align(
-                      alignment: isMe
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 4, horizontal: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isMe ? Colors.green[200] : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(msg['message']),
-                      ),
+                    return buildMessageListItem(
+                      msg: msg,
+                      isMe: isMe,
+                      previousMsg: previousMsg,
                     );
                   },
                 );
@@ -125,25 +216,10 @@ class _WomanChatPageState extends State<WomanChatPage> {
             ),
           ),
 
-          // Input
-          SafeArea(
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: "Type a message...",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
-              ],
-            ),
+          // Chat input
+          buildChatInput(
+            controller: _messageController,
+            onSend: _handleSendButton,
           ),
         ],
       ),

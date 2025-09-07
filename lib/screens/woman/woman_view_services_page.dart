@@ -1,53 +1,65 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'woman_requested_services_page.dart';
 import 'woman_view_services_detail_page.dart';
 
-class WomanViewServicesPage extends StatelessWidget {
+class WomanViewServicesPage extends StatefulWidget {
   const WomanViewServicesPage({Key? key}) : super(key: key);
+
+  @override
+  State<WomanViewServicesPage> createState() => _WomanViewServicesPageState();
+}
+
+class _WomanViewServicesPageState extends State<WomanViewServicesPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("All Services"),
-        backgroundColor: Colors.pinkAccent,
+      appBar: buildStyledAppBar(
+        title: "All Services",
       ),
       body: Column(
         children: [
-          // 👇 My Requests Button placed on top
+          // 🔍 Search bar
           Padding(
             padding: const EdgeInsets.all(12.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pinkAccent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const WomanRequestedServicesPage()),
-                  );
-                },
-                child: const Text(
-                  "View My Requested Services",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
+            child: buildSearchBar(
+              controller: _searchController,
+              onChanged: (query) {
+                setState(() {
+                  _searchQuery = query.toLowerCase();
+                });
+              },
+              hintText: "Search services...",
             ),
           ),
 
-          // 👇 Service list from Firestore
+          // 📌 My Requests Button
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: bigGreyButton(
+              label: "View My Requested Services",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WomanRequestedServicesPage(),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // 📋 Service list from Firestore
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -60,14 +72,26 @@ class WomanViewServicesPage extends StatelessWidget {
                 }
 
                 final serviceDocs = snapshot.data!.docs;
-                if (serviceDocs.isEmpty) {
+
+                // Apply search filter
+                final filteredDocs = serviceDocs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final title = (data['title'] ?? '').toString().toLowerCase();
+                  final category =
+                      (data['category'] ?? '').toString().toLowerCase();
+                  return title.contains(_searchQuery) ||
+                      category.contains(_searchQuery);
+                }).toList();
+
+                if (filteredDocs.isEmpty) {
                   return const Center(
-                      child: Text("No services available yet."));
+                    child: Text("No matching services found."),
+                  );
                 }
 
                 return ListView(
                   padding: const EdgeInsets.all(12),
-                  children: serviceDocs.map((doc) {
+                  children: filteredDocs.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
 
                     String postedDate = '';
@@ -76,12 +100,7 @@ class WomanViewServicesPage extends StatelessWidget {
                       postedDate = '${date.day}/${date.month}/${date.year}';
                     }
 
-                    return Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      margin: const EdgeInsets.symmetric(vertical: 8),
+                    return buildStyledCard(
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16),
                         title: Text(

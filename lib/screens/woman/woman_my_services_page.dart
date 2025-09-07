@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'woman_my_services_detail_page.dart';
 import 'woman_my_offer_service_page.dart';
 
@@ -19,8 +20,8 @@ class WomanMyServicesPage extends StatelessWidget {
     final userId = currentUser.uid;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Offered Services"),
+      appBar: buildStyledAppBar(
+        title: "My Offered Services",
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -67,17 +68,61 @@ class WomanMyServicesPage extends StatelessWidget {
                 DateTime date = (data['createdAt'] as Timestamp).toDate();
                 postedDate = '${date.day}/${date.month}/${date.year}';
               }
-
-              return Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              return buildStyledCard(
                 child: ListTile(
-                  title: Text(data['title'] ?? "No Title"),
-                  subtitle: Text(
-                    "Category: ${data['category'] ?? 'Other'}\n"
-                    "Price: ${data['price'] ?? 'N/A'}\n"
-                    "Created: $postedDate",
+                  contentPadding:
+                      const EdgeInsets.all(2), // 👈 controls inner padding
+                  title: Text(
+                    data['title'] ?? "No Title",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+
+                      // Price
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                              fontSize: 14, color: Colors.black),
+                          children: [
+                            const TextSpan(
+                              text: "Price: ",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: "RM ${data['price'] ?? 'N/A'}"),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+
+                      // Category
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                              fontSize: 14, color: Colors.black),
+                          children: [
+                            const TextSpan(
+                              text: "Category: ",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: data['category'] ?? 'N/A'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+
+                      if (postedDate.isNotEmpty)
+                        Text(
+                          "Created on: $postedDate",
+                          style:
+                              const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                    ],
                   ),
                   onTap: () {
                     Navigator.push(

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'woman_view_ngo_details_page.dart';
 import 'woman_my_requests_page.dart'; // <-- create this page to show her requests
 
@@ -11,18 +14,37 @@ class WomanViewNGOPage extends StatefulWidget {
 }
 
 class _WomanViewNGOPageState extends State<WomanViewNGOPage> {
+  TextEditingController searchController = TextEditingController();
+  String searchQuery = "";
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("View NGOs"),
+      appBar: buildStyledAppBar(
+        title: "View NGOs",
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Column(
         children: [
-          // 🔹 Button on top
+          // Search Bar
+          buildSearchBar(
+            controller: searchController,
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value.toLowerCase();
+              });
+            },
+            hintText: "Search NGO by name",
+          ),
+
+// Button
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton.icon(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 4), // smaller padding
+            child: bigGreyButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -31,15 +53,11 @@ class _WomanViewNGOPageState extends State<WomanViewNGOPage> {
                   ),
                 );
               },
-              icon: const Icon(Icons.list_alt),
-              label: const Text("View My Requests"),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(45),
-              ),
+              label: "View My Requests",
             ),
           ),
 
-          // 🔹 NGO List below the button
+          // NGO List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -56,15 +74,23 @@ class _WomanViewNGOPageState extends State<WomanViewNGOPage> {
 
                 final ngos = snapshot.data?.docs ?? [];
 
-                if (ngos.isEmpty) {
+                // Filter NGOs based on search query
+                final filteredNGOs = ngos.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final name = data['name'] ?? '';
+                  return name.toLowerCase().contains(searchQuery);
+                }).toList();
+
+                if (filteredNGOs.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.group, size: 64, color: Colors.grey),
+                      children: [
+                        Icon(Icons.group,
+                            size: 64, color: hexToColor('#a3ab94')),
                         SizedBox(height: 16),
                         Text(
-                          "No NGOs available currently.",
+                          "No NGOs found.",
                           style: TextStyle(fontSize: 16, color: Colors.grey),
                           textAlign: TextAlign.center,
                         ),
@@ -74,24 +100,27 @@ class _WomanViewNGOPageState extends State<WomanViewNGOPage> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: ngos.length,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                  itemCount: filteredNGOs.length,
                   itemBuilder: (context, index) {
-                    final data = ngos[index].data() as Map<String, dynamic>;
+                    final data =
+                        filteredNGOs[index].data() as Map<String, dynamic>;
                     final name = data['name'] ?? 'Unknown NGO';
                     final phone = data['phone'] ?? '';
                     final description = data['description'] ?? '';
                     final imageUrl = data['profileImage'] ?? '';
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
+                    return buildStyledCard(
                       child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 8),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => WomanViewNGODetailsPage(
-                                ngoId: ngos[index].id,
+                                ngoId: filteredNGOs[index].id,
                                 name: name,
                                 phone: phone,
                                 description: description,
@@ -100,33 +129,26 @@ class _WomanViewNGOPageState extends State<WomanViewNGOPage> {
                             ),
                           );
                         },
-                        title: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 25,
-                              backgroundImage: imageUrl.isNotEmpty
-                                  ? NetworkImage(imageUrl)
-                                  : null,
-                              child: imageUrl.isEmpty
-                                  ? const Icon(Icons.group, size: 30)
-                                  : null,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ],
+                        leading: CircleAvatar(
+                          radius: 35,
+                          backgroundColor: imageUrl.isEmpty
+                              ? hexToColor('#f0f0f0')
+                              : Colors.transparent,
+                          backgroundImage: imageUrl.isNotEmpty
+                              ? NetworkImage(imageUrl)
+                              : null,
+                          child: imageUrl.isEmpty
+                              ? Icon(Icons.group,
+                                  size: 45, color: hexToColor('#a3ab94'))
+                              : null,
                         ),
-                        subtitle: Text(
-                          description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        title: Text(
+                          name,
+                          style: GoogleFonts.openSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
                     );

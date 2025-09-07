@@ -7,12 +7,12 @@ class WomanRequestedServicesPage extends StatefulWidget {
   const WomanRequestedServicesPage({Key? key}) : super(key: key);
 
   @override
-  State<WomanRequestedServicesPage> createState() => _WomanRequestedServicesPageState();
+  State<WomanRequestedServicesPage> createState() =>
+      _WomanRequestedServicesPageState();
 }
 
-class _WomanRequestedServicesPageState extends State<WomanRequestedServicesPage> {
-
-
+class _WomanRequestedServicesPageState
+    extends State<WomanRequestedServicesPage> {
   Future<List<Map<String, dynamic>>> _fetchMyRequests() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return [];
@@ -83,100 +83,101 @@ class _WomanRequestedServicesPageState extends State<WomanRequestedServicesPage>
   }
 
   Future<void> _showReviewDialog(
-    BuildContext context, String serviceId, String requestId) async {
-  final currentUser = FirebaseAuth.instance.currentUser;
-  if (currentUser == null) return;
+      BuildContext context, String serviceId, String requestId) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
 
-  final _commentController = TextEditingController();
-  int selectedRating = 0;
+    final _commentController = TextEditingController();
+    int selectedRating = 0;
 
-  await showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setStateDialog) => AlertDialog(
-          title: const Text("Add Rating & Comment"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) => AlertDialog(
+            title: const Text("Add Rating & Comment"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
 // ⭐ Star rating row with reduced spacing
-Row(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: List.generate(5, (index) {
-    return GestureDetector(
-      onTap: () {
-        setStateDialog(() {
-          selectedRating = index + 1;
-        });
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2.0), // control spacing
-        child: Icon(
-          index < selectedRating ? Icons.star : Icons.star_border,
-          color: Colors.amber,
-          size: 32,
-        ),
-      ),
-    );
-  }),
-),
-
-
-                TextField(
-                  controller: _commentController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: "Comment",
-                    border: OutlineInputBorder(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return GestureDetector(
+                        onTap: () {
+                          setStateDialog(() {
+                            selectedRating = index + 1;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 2.0), // control spacing
+                          child: Icon(
+                            index < selectedRating
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: Colors.amber,
+                            size: 32,
+                          ),
+                        ),
+                      );
+                    }),
                   ),
-                ),
-              ],
+
+                  TextField(
+                    controller: _commentController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: "Comment",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              child: const Text("Cancel"),
-              onPressed: () => Navigator.pop(context),
-            ),
-            ElevatedButton(
-              child: const Text("Submit"),
-              onPressed: () async {
-                if (selectedRating == 0) {
+            actions: [
+              TextButton(
+                child: const Text("Cancel"),
+                onPressed: () => Navigator.pop(context),
+              ),
+              ElevatedButton(
+                child: const Text("Submit"),
+                onPressed: () async {
+                  if (selectedRating == 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Please select a rating.")),
+                    );
+                    return;
+                  }
+
+                  await FirebaseFirestore.instance
+                      .collection('service_reviews')
+                      .add({
+                    'serviceId': serviceId,
+                    'requestId': requestId,
+                    'reviewerId': currentUser.uid,
+                    'rating': selectedRating,
+                    'comment': _commentController.text.trim(),
+                    'createdAt': FieldValue.serverTimestamp(),
+                  });
+
+                  Navigator.pop(context);
+
+                  // ✅ Refresh page
+                  setState(() {});
+
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please select a rating.")),
+                    const SnackBar(content: Text("Review submitted.")),
                   );
-                  return;
-                }
-
-                await FirebaseFirestore.instance
-                    .collection('service_reviews')
-                    .add({
-                  'serviceId': serviceId,
-                  'requestId': requestId,
-                  'reviewerId': currentUser.uid,
-                  'rating': selectedRating,
-                  'comment': _commentController.text.trim(),
-                  'createdAt': FieldValue.serverTimestamp(),
-                });
-
-                Navigator.pop(context);
-
-                // ✅ Refresh page
-                setState(() {});
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Review submitted.")),
-                );
-              },
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -235,14 +236,19 @@ Row(
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => WomanChatPage(
-                                        receiverId: req['providerId']),
+                                      receiverId:
+                                          req['providerId'], // pass provider ID
+                                      receiverName: req[
+                                          'providerName'], // pass provider name
+                                    ),
                                   ),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                      content: Text(
-                                          "Provider not available for chat.")),
+                                    content: Text(
+                                        "Provider not available for chat."),
+                                  ),
                                 );
                               }
                             },

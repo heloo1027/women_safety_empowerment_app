@@ -9,6 +9,7 @@ import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
 import 'package:women_safety_empowerment_app/screens/employer/employer_job_screen.dart';
 import 'package:women_safety_empowerment_app/screens/employer/employer_profile_page.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class EmployerHomeScreen extends StatefulWidget {
   const EmployerHomeScreen({super.key});
@@ -51,24 +52,36 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
     });
   }
 
-  // Fetch user data from Firestore for the Drawer header
   Future<Map<String, dynamic>?> _fetchUserData() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
-    DocumentSnapshot snapshot =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-    if (snapshot.exists) {
-      return snapshot.data() as Map<String, dynamic>;
-    } else {
-      return null;
-    }
+    // Fetch user data (name, role, email)
+    DocumentSnapshot userSnap =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final userData =
+        userSnap.exists ? userSnap.data() as Map<String, dynamic> : {};
+
+    // Fetch profile image from womanProfiles
+    DocumentSnapshot profileSnap = await FirebaseFirestore.instance
+        .collection('companyProfiles')
+        .doc(uid)
+        .get();
+    final profileData =
+        profileSnap.exists ? profileSnap.data() as Map<String, dynamic> : {};
+
+    // Merge data
+    return {
+      'companyName': userData['companyName'] ?? 'No Name',
+      'role': userData['role'] ?? 'No Role',
+      'email': userData['email'] ?? '',
+      'profileImage': profileData['profileImage'] ?? '',
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Displays Top App Bar title based on current selected index
         title: Text(
           _titles[_selectedIndex],
           style: GoogleFonts.openSans(
@@ -79,21 +92,17 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
         ),
         backgroundColor: hexToColor("#dddddd"),
         iconTheme: IconThemeData(
-          color: hexToColor("#4a6741"), // drawer icon color
+          color: hexToColor("#4a6741"),
         ),
       ),
-
-      // Side drawer with user info and logout
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Uses FutureBuilder to load user info from Firestore
             FutureBuilder<Map<String, dynamic>?>(
               future: _fetchUserData(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  // Show loading indicator while fetching data
                   return DrawerHeader(
                     decoration: BoxDecoration(
                       color: hexToColor("#dddddd"),
@@ -103,7 +112,6 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                     ),
                   );
                 } else if (snapshot.hasError || !snapshot.hasData) {
-                  // Show error message if fetch fails
                   return DrawerHeader(
                     decoration: BoxDecoration(
                       color: hexToColor("#dddddd"),
@@ -116,9 +124,8 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                     ),
                   );
                 } else {
-                  // Display user info in drawer header
                   var data = snapshot.data!;
-                  String name = data['name'] ?? 'No Name';
+                  String email = data['email'] ?? 'No email';
                   String role = data['role'] ?? 'No Role';
                   String imageUrl = data['profileImage'] ?? '';
 
@@ -129,7 +136,6 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Profile image with circle border
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -150,20 +156,16 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                                 : null,
                           ),
                         ),
-                        const SizedBox(height: 2), // between image and name
-                        // Display user name
+                        const SizedBox(height: 2),
                         Text(
-                          name,
+                          email,
                           style: GoogleFonts.openSans(
                             color: hexToColor("#4a6741"),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(
-                            height: 2 // spacing between name and role
-                            ),
-                        // Display user role inside rounded container
+                        const SizedBox(height: 2),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8.0, vertical: 4.0),
@@ -292,33 +294,42 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
       body: _pages[_selectedIndex],
 
       // bottomNavigationBar to switch between pages
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: hexToColor("#dddddd"),
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work),
-            label: 'Job',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+      // bottomNavigationBar: buildStyledBottomNav(
+      //   backgroundColor: hexToColor("#dddddd"),
+      //   items: const <BottomNavigationBarItem>[
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.work),
+      //       label: 'Job',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.message),
+      //       label: 'Chat',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.person),
+      //       label: 'Profile',
+      //     ),
+      //   ],
+      //   currentIndex: _selectedIndex,
+      //   selectedItemColor: hexToColor("#4a6741"), // Active icon color
+      //   unselectedItemColor: Colors.grey, // Inactive icon color
+      //   onTap: _onItemTapped, // Tap handler
+      //   selectedLabelStyle: GoogleFonts.openSans(
+      //     fontSize: 14,
+      //     fontWeight: FontWeight.bold,
+      //   ),
+      //   unselectedLabelStyle: GoogleFonts.openSans(
+      //     fontSize: 12,
+      //   ),
+      // ),
+      bottomNavigationBar: buildStyledBottomNav(
         currentIndex: _selectedIndex,
-        selectedItemColor: hexToColor("#4a6741"), // Active icon color
-        unselectedItemColor: Colors.grey, // Inactive icon color
-        onTap: _onItemTapped, // Tap handler
-        selectedLabelStyle: GoogleFonts.openSans(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: GoogleFonts.openSans(
-          fontSize: 12,
-        ),
+        onTap: _onItemTapped,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Job'),
+          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Chat'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
       ),
     );
   }

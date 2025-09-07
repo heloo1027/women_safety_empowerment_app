@@ -7,6 +7,7 @@ import 'package:women_safety_empowerment_app/screens/ngo/ngo_profile_page.dart';
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 import 'ngo_chat_list_page.dart';
 import 'ngo_manage_contributions_page.dart';
@@ -23,6 +24,7 @@ class NGOHomeScreen extends StatefulWidget {
 // Main home screen for NGO user
 class _NGOHomeScreenState extends State<NGOHomeScreen> {
   int _selectedIndex = 0; // Index for BottomNavigationBar and Drawer highlight
+  Widget? _currentPage; // Allows showing drawer-only pages
 
   // Function to sign out user and navigate to LoginScreen
   void _signOut(BuildContext context) async {
@@ -37,7 +39,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
   final List<Widget> _pages = <Widget>[
     const NGOChatListPage(),
     const NGORequestDonationPage(),
-    const NGOManageContributionsPage(),
+    // const NGOManageContributionsPage(),
     const NGOReceiveSupportPage(),
     const NGOProfileScreen(),
   ];
@@ -46,7 +48,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
   final List<String> _titles = <String>[
     'Chat',
     'Request Donation',
-    'Manage Contributions',
+    // 'Manage Contributions',
     'Receive Support',
     'Profile',
   ];
@@ -55,6 +57,14 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      _currentPage = null; // clear drawer-only page
+    });
+  }
+
+  void _openDrawerPage(Widget page) {
+    setState(() {
+      _selectedIndex = -1; // deselect bottom nav
+      _currentPage = page;
     });
   }
 
@@ -79,6 +89,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
     return {
       'name': userData['name'] ?? 'No Name',
       'role': userData['role'] ?? 'No Role',
+      'email': userData['email'] ?? '',
       'profileImage': profileData['profileImage'] ?? '',
     };
   }
@@ -89,7 +100,11 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
       appBar: AppBar(
         // Displays Top App Bar title based on current selected index
         title: Text(
-          _titles[_selectedIndex],
+          _currentPage != null
+              ? (_currentPage is NGOManageContributionsPage
+                  ? "Contributions"
+                  : "")
+              : _titles[_selectedIndex],
           style: GoogleFonts.openSans(
             fontWeight: FontWeight.bold,
             fontSize: 18.sp,
@@ -97,9 +112,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
           ),
         ),
         backgroundColor: hexToColor("#dddddd"),
-        iconTheme: IconThemeData(
-          color: hexToColor("#4a6741"), // drawer icon color
-        ),
+        iconTheme: IconThemeData(color: hexToColor("#4a6741")),
       ),
 
       // Side drawer with user info and logout
@@ -137,7 +150,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
                 } else {
                   // Display user info in drawer header
                   var data = snapshot.data!;
-                  String name = data['name'] ?? 'No Name';
+                  String name = data['email'] ?? 'No Email';
                   String role = data['role'] ?? 'No Role';
                   String imageUrl = data['profileImage'] ?? '';
 
@@ -230,6 +243,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
                 Navigator.pop(context);
                 setState(() {
                   _selectedIndex = 0;
+                  _currentPage = null;
                 });
               },
             ),
@@ -256,6 +270,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
                 Navigator.pop(context);
                 setState(() {
                   _selectedIndex = 1;
+                  _currentPage = null;
                 });
               },
             ),
@@ -264,12 +279,38 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
             ListTile(
               leading: Icon(
                 Icons.volunteer_activism,
-                color:
-                    _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
+                color: _currentPage is NGOManageContributionsPage
+                    ? hexToColor("#4a6741")
+                    : Colors.grey,
                 size: 24,
               ),
               title: Text(
                 'Contributions',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight: _currentPage is NGOManageContributionsPage
+                      ? FontWeight.bold
+                      : FontWeight.w600,
+                  color: _currentPage is NGOManageContributionsPage
+                      ? hexToColor("#4a6741")
+                      : Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _openDrawerPage(const NGOManageContributionsPage());
+              },
+            ),
+
+            // Receive Support option in drawer
+            ListTile(
+              leading: Icon(
+                Icons.support_agent,
+                color:
+                    _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
+              ),
+              title: Text(
+                'Support',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight:
@@ -282,19 +323,20 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
                 Navigator.pop(context);
                 setState(() {
                   _selectedIndex = 2;
+                  _currentPage = null;
                 });
               },
             ),
 
-            // Receive Support option in drawer
+            // Profile option in drawer
             ListTile(
               leading: Icon(
-                Icons.support_agent,
+                Icons.person,
                 color:
                     _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
               ),
               title: Text(
-                'Support',
+                'Profile',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight:
@@ -307,31 +349,7 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
                 Navigator.pop(context);
                 setState(() {
                   _selectedIndex = 3;
-                });
-              },
-            ),
-
-            // Profile option in drawer
-            ListTile(
-              leading: Icon(
-                Icons.person,
-                color:
-                    _selectedIndex == 4 ? hexToColor("#4a6741") : Colors.grey,
-              ),
-              title: Text(
-                'Profile',
-                style: GoogleFonts.openSans(
-                  fontSize: 16,
-                  fontWeight:
-                      _selectedIndex == 4 ? FontWeight.bold : FontWeight.w600,
-                  color:
-                      _selectedIndex == 4 ? hexToColor("#4a6741") : Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() {
-                  _selectedIndex = 4;
+                  _currentPage = null;
                 });
               },
             ),
@@ -358,44 +376,57 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
       ),
 
       // Body content shows page based on selected tab
-      body: _pages[_selectedIndex],
+      body: _currentPage ?? _pages[_selectedIndex],
+      // body: _pages[_selectedIndex],
 
       // bottomNavigationBar to switch between pages
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: hexToColor("#dddddd"),
-        items: const <BottomNavigationBarItem>[
+      // bottomNavigationBar: BottomNavigationBar(
+      //   backgroundColor: hexToColor("#dddddd"),
+      //   items: const <BottomNavigationBarItem>[
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.chat),
+      //       label: 'Chat',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.feedback),
+      //       label: 'Request',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.volunteer_activism),
+      //       label: 'Contributions',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.support_agent),
+      //       label: 'Support',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.person),
+      //       label: 'Profile',
+      //     ),
+      //   ],
+      //   currentIndex: _selectedIndex,
+      //   selectedItemColor: hexToColor("#4a6741"), // Active icon color
+      //   unselectedItemColor: Colors.grey, // Inactive icon color
+      //   onTap: _onItemTapped, // Tap handler
+      //   selectedLabelStyle: GoogleFonts.openSans(
+      //     fontSize: 14,
+      //     fontWeight: FontWeight.bold,
+      //   ),
+      //   unselectedLabelStyle: GoogleFonts.openSans(
+      //     fontSize: 12,
+      //   ),
+      // ),
+      bottomNavigationBar: buildStyledBottomNav(
+        currentIndex:
+            _selectedIndex >= 0 ? _selectedIndex : null, // null = no highlight
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
+          BottomNavigationBarItem(icon: Icon(Icons.feedback), label: 'Request'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.feedback),
-            label: 'Request',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.volunteer_activism),
-            label: 'Contributions',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.support_agent),
-            label: 'Support',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+              icon: Icon(Icons.support_agent), label: 'Support'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: hexToColor("#4a6741"), // Active icon color
-        unselectedItemColor: Colors.grey, // Inactive icon color
-        onTap: _onItemTapped, // Tap handler
-        selectedLabelStyle: GoogleFonts.openSans(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: GoogleFonts.openSans(
-          fontSize: 12,
-        ),
       ),
     );
   }

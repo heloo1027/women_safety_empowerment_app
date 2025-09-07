@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -69,27 +71,30 @@ class _SOSButtonState extends State<SOSButton> {
     setState(() => _isLoading = true);
 
     try {
-      // 1️⃣ Check location permission
+      // 1️ Check location permission
       if (!await _checkLocationPermission()) {
         setState(() => _isLoading = false);
         return;
       }
 
-      // 2️⃣ Get user ID & GPS position
+      // 2️ Get user ID & GPS position
       String uid = FirebaseAuth.instance.currentUser!.uid;
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-      );
+      ).timeout(const Duration(seconds: 15), onTimeout: () {
+        throw TimeoutException("Location request timed out");
+      });
 
-      // 3️⃣ Fetch emergency email
+      // 3️ Fetch emergency email
       String? emergencyEmail = await _getEmergencyEmail(uid);
       if (emergencyEmail == null) {
-        _showSnack('No emergency email found for this user');
+        // _showSnack('No emergency email found for this user');
+        _showSnack('Please fill up an emergency email in Profile Page');
         setState(() => _isLoading = false);
         return;
       }
 
-      // 4️⃣ Fetch emergency contact info from users
+      // 4️ Fetch emergency contact info from users
       Map<String, dynamic>? contactInfo =
           await _getEmergencyContact(emergencyEmail);
       if (contactInfo == null) {
@@ -98,10 +103,10 @@ class _SOSButtonState extends State<SOSButton> {
         return;
       }
 
-      // 5️⃣ Send notification
+      // 5️ Send notification
       await _notifyEmergencyContact(contactInfo, position);
 
-      // 6️⃣ Save SOS report
+      // 6 Save SOS report
       await FirebaseFirestore.instance.collection('sos_reports').add({
         'userID': uid,
         'latitude': position.latitude,

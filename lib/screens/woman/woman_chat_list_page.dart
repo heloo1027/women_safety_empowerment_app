@@ -16,7 +16,6 @@ class WomanChatListPage extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("My Conversations")),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection("chats")
@@ -39,90 +38,102 @@ class WomanChatListPage extends StatelessWidget {
               final chatDoc = chatDocs[index];
               final data = chatDoc.data() as Map<String, dynamic>;
 
-              // Get the other participant
               final participants = List<String>.from(data["participants"]);
               final otherUserId =
                   participants.firstWhere((id) => id != currentUser.uid);
 
               final lastMessage = data["lastMessage"] ?? "";
 
+              // 🔹 Step 1: fetch role from users collection
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
-                    .collection("womanProfiles") // ✅ assume all users stored here
+                    .collection("users")
                     .doc(otherUserId)
                     .get(),
-                builder: (context, userSnap) {
-                  String displayName = "User";
-                  String? avatarUrl;
-
-                  if (userSnap.hasData && userSnap.data!.exists) {
-                    final userData =
-                        userSnap.data!.data() as Map<String, dynamic>;
-                    displayName = userData["name"] ?? "User";
-                    avatarUrl = userData["profileImage"];
+                builder: (context, userRoleSnap) {
+                  if (!userRoleSnap.hasData || !userRoleSnap.data!.exists) {
+                    return const SizedBox.shrink();
                   }
 
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                          ? NetworkImage(avatarUrl)
-                          : null,
-                      child: (avatarUrl == null || avatarUrl.isEmpty)
-                          ? Text(displayName[0].toUpperCase())
-                          : null,
-                    ),
-                    title: Text(displayName),
-                    subtitle: Text(
-                      lastMessage,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection("chats")
-                          .doc(chatDoc.id)
-                          .collection("messages")
-                          .where("receiverId", isEqualTo: currentUser.uid)
-                          .where("isRead", isEqualTo: false)
-                          .snapshots(),
-                      builder: (context, unreadSnap) {
-                        if (unreadSnap.hasData &&
-                            unreadSnap.data!.docs.isNotEmpty) {
-                          final count = unreadSnap.data!.docs.length;
-                          return CircleAvatar(
-                            radius: 12,
-                            backgroundColor: Colors.red,
-                            child: Text(
-                              "$count",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 12),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                    onTap: () async {
-                      // ✅ mark unread as read
-                      final unreadMessages = await FirebaseFirestore.instance
-                          .collection("chats")
-                          .doc(chatDoc.id)
-                          .collection("messages")
-                          .where("receiverId", isEqualTo: currentUser.uid)
-                          .where("isRead", isEqualTo: false)
-                          .get();
+                  final userRoleData =
+                      userRoleSnap.data!.data() as Map<String, dynamic>;
+                  final role = userRoleData["role"] ?? "User";
 
-                      for (var msg in unreadMessages.docs) {
-                        msg.reference.update({"isRead": true});
+                  // 🔹 Step 2: decide which profile collection to fetch
+                  late Future<DocumentSnapshot> profileFuture;
+                  if (role == "Woman") {
+                    profileFuture = FirebaseFirestore.instance
+                        .collection("womanProfiles")
+                        .doc(otherUserId)
+                        .get();
+                  } else if (role == "Employer") {
+                    profileFuture = FirebaseFirestore.instance
+                        .collection("companyProfiles")
+                        .doc(otherUserId)
+                        .get();
+                  } else if (role == "NGO") {
+                    profileFuture = FirebaseFirestore.instance
+                        .collection("ngoProfiles")
+                        .doc(otherUserId)
+                        .get();
+                  } else {
+                    profileFuture = FirebaseFirestore.instance
+                        .collection("users")
+                        .doc(otherUserId)
+                        .get();
+                  }
+
+                  // 🔹 Step 3: fetch actual profile details
+                  return FutureBuilder<DocumentSnapshot>(
+                    future: profileFuture,
+                    builder: (context, profileSnap) {
+                      String displayName = "User";
+                      String? avatarUrl;
+
+                      if (profileSnap.hasData && profileSnap.data!.exists) {
+                        final profileData =
+                            profileSnap.data!.data() as Map<String, dynamic>;
+
+                        if (role == "Woman") {
+                          displayName = profileData["name"] ?? "User";
+                          avatarUrl = profileData["profileImage"];
+                        } else if (role == "Employer") {
+                          displayName =
+                              profileData["companyName"] ?? "Employer";
+                          avatarUrl = profileData["logo"];
+                        } else if (role == "NGO") {
+                          displayName = profileData["name"] ?? "NGO";
+                          avatarUrl = profileData["profileImage"];
+                        }
                       }
 
-                      // ✅ Open chat page
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              WomanChatPage(receiverId: otherUserId),
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: (avatarUrl != null &&
+                                  avatarUrl.isNotEmpty)
+                              ? NetworkImage(avatarUrl)
+                              : null,
+                          child: (avatarUrl == null || avatarUrl.isEmpty)
+                              ? Text(displayName[0].toUpperCase())
+                              : null,
                         ),
+                        title: Text(displayName),
+                        subtitle: Text(
+                          lastMessage,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => WomanChatPage(
+                                receiverId: otherUserId,
+                                receiverName: displayName,
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );

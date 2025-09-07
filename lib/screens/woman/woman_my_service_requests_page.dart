@@ -31,12 +31,14 @@ class WomanServiceRequestsPage extends StatelessWidget {
         .update({'status': newStatus});
   }
 
-  void _openChat(BuildContext context, String requesterId) {
+  void _openChat(
+      BuildContext context, String requesterId, String receiverName) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => WomanChatPage(
-          receiverId: requesterId, // requester (the other woman)
+          receiverId: requesterId, // the requester ID
+          receiverName: receiverName, // pass the name here
         ),
       ),
     );
@@ -99,26 +101,25 @@ class WomanServiceRequestsPage extends StatelessWidget {
                             children: [
                               const Text("Status: "),
                               DropdownButton<String>(
-  value: data['status'], // e.g., "cancelled"
-  onChanged: (newValue) {
-    FirebaseFirestore.instance
-        .collection('service_requests')
-        .doc(doc.id)
-        .update({'status': newValue});
-  },
-  items: [
-    "pending",
-    "accepted",
-    "completed",
-    "cancelled",
-  ].map((status) {
-    return DropdownMenuItem(
-      value: status,
-      child: Text(status),
-    );
-  }).toList(),
-),
-
+                                value: data['status'], // e.g., "cancelled"
+                                onChanged: (newValue) {
+                                  FirebaseFirestore.instance
+                                      .collection('service_requests')
+                                      .doc(doc.id)
+                                      .update({'status': newValue});
+                                },
+                                items: [
+                                  "pending",
+                                  "accepted",
+                                  "completed",
+                                  "cancelled",
+                                ].map((status) {
+                                  return DropdownMenuItem(
+                                    value: status,
+                                    child: Text(status),
+                                  );
+                                }).toList(),
+                              ),
                             ],
                           ),
                           Text("Date: $requestedDate"),
@@ -126,7 +127,8 @@ class WomanServiceRequestsPage extends StatelessWidget {
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.chat, color: Colors.blue),
-                        onPressed: () => _openChat(context, requesterId),
+                        onPressed: () =>
+                            _openChat(context, requesterId, requesterName),
                       ),
                     ),
                   );

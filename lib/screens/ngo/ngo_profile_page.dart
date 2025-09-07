@@ -214,7 +214,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
                       labelText: 'Descriptions',
                       border: UnderlineInputBorder(),
                     ),
-                    maxLines: 3,
+                    maxLines: 8,
                   ),
                   const SizedBox(height: 20.0),
                   SizedBox(

@@ -154,16 +154,7 @@ class _EmployerProfilePageState extends State<EmployerProfilePage> {
                         border: UnderlineInputBorder(),
                       ),
                       validator: (value) =>
-                          (value == null || value.trim().isEmpty) ? 'Enter company name' : null,
-                    ),
-                    const SizedBox(height: 10.0),
-                    TextFormField(
-                      controller: _companyDescriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Company Description',
-                        border: UnderlineInputBorder(),
-                      ),
-                      maxLines: 3,
+                          (value == null || value.trim().isEmpty) ? 'Please enter a company name' : null,
                     ),
                     const SizedBox(height: 10.0),
                     TextFormField(
@@ -172,6 +163,7 @@ class _EmployerProfilePageState extends State<EmployerProfilePage> {
                         labelText: 'Company Address',
                         border: UnderlineInputBorder(),
                       ),
+                      maxLines: 2,
                     ),
                     const SizedBox(height: 10.0),
                     TextFormField(
@@ -181,6 +173,15 @@ class _EmployerProfilePageState extends State<EmployerProfilePage> {
                         border: UnderlineInputBorder(),
                       ),
                       keyboardType: TextInputType.url,
+                    ),
+                    const SizedBox(height: 10.0),
+                    TextFormField(
+                      controller: _companyDescriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Company Description',
+                        border: UnderlineInputBorder(),
+                      ),
+                      maxLines: 5,
                     ),
                     const SizedBox(height: 20.0),
                     SizedBox(

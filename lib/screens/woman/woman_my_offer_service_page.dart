@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class WomanMyManageServicePage extends StatefulWidget {
   final String? serviceId; // null = add new
@@ -12,7 +13,8 @@ class WomanMyManageServicePage extends StatefulWidget {
   });
 
   @override
-  _WomanMyManageServicePageState createState() => _WomanMyManageServicePageState();
+  _WomanMyManageServicePageState createState() =>
+      _WomanMyManageServicePageState();
 }
 
 class _WomanMyManageServicePageState extends State<WomanMyManageServicePage> {
@@ -173,22 +175,18 @@ class _WomanMyManageServicePageState extends State<WomanMyManageServicePage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.serviceId == null
-            ? "Offer a Service"
-            : "Edit Service"),
-        backgroundColor: Colors.pinkAccent,
+      appBar: buildStyledAppBar(
+        title: widget.serviceId == null ? "Offer a Service" : "Edit Service",
         actions: [
           if (widget.serviceId != null)
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: _deleteService,
-              tooltip: "Delete Service",
             ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: kPagePadding,
         child: Form(
           key: _formKey,
           child: ListView(
@@ -201,17 +199,6 @@ class _WomanMyManageServicePageState extends State<WomanMyManageServicePage> {
                 ),
                 validator: (value) =>
                     value!.isEmpty ? "Please enter a title" : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: "Description",
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) =>
-                    value!.isEmpty ? "Please enter a description" : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -246,16 +233,22 @@ class _WomanMyManageServicePageState extends State<WomanMyManageServicePage> {
                     value == null ? "Please select a category" : null,
               ),
               const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _saveService,
-                icon: const Icon(Icons.check),
-                label: Text(widget.serviceId == null
-                    ? "Offer Service"
-                    : "Update Service"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pinkAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: "Description",
+                  border: OutlineInputBorder(),
                 ),
+                validator: (value) =>
+                    value!.isEmpty ? "Please enter a description" : null,
+              ),
+              const SizedBox(height: 12),
+              bigGreyButton(
+                onPressed: _saveService,
+                label: widget.serviceId == null
+                    ? "Offer Service"
+                    : "Update Service",
               ),
             ],
           ),

@@ -2,15 +2,14 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:path_provider/path_provider.dart';
+
 import '../../widgets/common/styles.dart';
 
 class WomanProfileScreen extends StatefulWidget {
@@ -33,6 +32,7 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
   final TextEditingController _institutionController = TextEditingController();
   final TextEditingController _expectedFinishController =
       TextEditingController();
+  final TextEditingController _yearController = TextEditingController();
 
   // Skills
   final TextEditingController _skillController = TextEditingController();
@@ -50,6 +50,25 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
   bool _isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
+
+  // Education expected finish
+  String? _selectedMonth;
+  String? _selectedYear;
+
+  final List<String> _months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ];
 
   @override
   void initState() {
@@ -97,8 +116,15 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
                   Map<String, dynamic>.from(data['education']);
               _courseController.text = education['course'] ?? '';
               _institutionController.text = education['institution'] ?? '';
-              _expectedFinishController.text =
-                  education['expectedFinish'] ?? '';
+              final expectedFinish = education['expectedFinish'] ?? '';
+              if (expectedFinish.isNotEmpty) {
+                final parts = expectedFinish.split(" ");
+                if (parts.length == 2) {
+                  _selectedMonth = parts[0];
+                  _selectedYear = parts[1];
+                  _yearController.text = _selectedYear ?? '';
+                }
+              }
             }
 
             // Resume file name
@@ -116,7 +142,53 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    String uid = FirebaseAuth.instance.currentUser!.uid;
+    final currentUser = FirebaseAuth.instance.currentUser!;
+
+    // Always sanitize (trim spaces)
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final emergencyEmail = _emergencyEmailController.text.trim();
+    final course = _courseController.text.trim();
+    final institution = _institutionController.text.trim();
+    final year = _yearController.text.trim();
+
+    // Clean lists too (skills, languages)
+    final skills = _selectedSkills
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final languages = _selectedLanguages
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    // Extra validations
+    if (emergencyEmail.isNotEmpty) {
+      if (emergencyEmail == currentUser.email) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Emergency email cannot be your own email')),
+        );
+        return;
+      }
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: emergencyEmail)
+          .limit(1)
+          .get();
+
+      if (userDoc.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Emergency email is not registered in the system')),
+        );
+        return;
+      }
+    }
+
+    // Passed all validations
+    String uid = currentUser.uid;
     setState(() => _isLoading = true);
 
     try {
@@ -124,21 +196,22 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
           .collection("womanProfiles")
           .doc(uid)
           .set({
-        'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'emergencyEmail': _emergencyEmailController.text.trim(),
+        'name': name,
+        'phone': phone,
+        'emergencyEmail': emergencyEmail,
         'profileImage': _profileImageUrl ?? '',
-        'skills': _selectedSkills,
-        'languages': _selectedLanguages,
+        'skills': skills,
+        'languages': languages,
         'education': {
-          'course': _courseController.text.trim(),
-          'institution': _institutionController.text.trim(),
-          'expectedFinish': _expectedFinishController.text.trim(),
+          'course': course,
+          'institution': institution,
+          'expectedFinish': _selectedMonth != null && year.isNotEmpty
+              ? "${_selectedMonth!} $year"
+              : '',
         },
         'resume': _resumeUrl ?? '',
         'updatedAt': FieldValue.serverTimestamp(),
-        'createdAt':
-            FieldValue.serverTimestamp(), // only sets if doc doesn't exist
+        'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -229,7 +302,7 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
     }
   }
 
-  // Pick and upload resume
+// Pick and upload resume
 // Pick and upload resume to Cloudinary
   Future<void> _pickAndUploadResume() async {
     try {
@@ -328,6 +401,7 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
     _courseController.dispose();
     _institutionController.dispose();
     _expectedFinishController.dispose();
+    _yearController.dispose();
     _skillController.dispose();
     _languageController.dispose();
     super.dispose();
@@ -344,14 +418,14 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
     }
 
     return SingleChildScrollView(
-      padding: kPagePadding, // ✅ reuse common page padding
+      padding: kPagePadding,
       child: Center(
         child: Container(
           constraints: BoxConstraints(
             minHeight: MediaQuery.of(context).size.height * 0.8,
           ),
           child: buildStyledCard(
-            // ✅ use shared style
+            // use shared style
             child: Form(
               key: _formKey,
               child: Column(
@@ -405,14 +479,16 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
-                      if (value != null &&
-                          value.isNotEmpty &&
-                          !value.contains('@')) {
-                        return 'Enter a valid email';
+                      final trimmed = value?.trim() ?? '';
+                      if (trimmed.isNotEmpty) {
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(trimmed)) {
+                          return 'Enter a valid email';
+                        }
                       }
                       return null;
                     },
                   ),
+
                   const SizedBox(height: 20.0),
 
                   // --- Education ---
@@ -431,11 +507,88 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
                     decoration: const InputDecoration(labelText: 'Institution'),
                   ),
                   const SizedBox(height: 10),
-                  TextFormField(
-                    controller: _expectedFinishController,
-                    decoration:
-                        const InputDecoration(labelText: 'Expected Finish'),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Expected Finish",
+                        style: GoogleFonts.lato(
+                          fontSize: 10,
+                          color: const Color(0xFF555555),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          // Month Dropdown
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedMonth,
+                              decoration:
+                                  const InputDecoration(labelText: "Month"),
+                              items: _months
+                                  .map((m) => DropdownMenuItem(
+                                      value: m, child: Text(m)))
+                                  .toList(),
+                              onChanged: (val) {
+                                setState(() => _selectedMonth = val);
+                              },
+                              validator: (val) {
+                                // If user enters a year but no month
+                                if (_yearController.text.trim().isNotEmpty &&
+                                    (val == null || val.isEmpty)) {
+                                  return "Select month";
+                                }
+                                return null; // otherwise allow empty
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+
+                          // Year TextField (manual entry)
+                          Expanded(
+                            child: TextFormField(
+                              controller: _yearController,
+                              decoration:
+                                  const InputDecoration(labelText: "Year"),
+                              keyboardType: TextInputType.number,
+                              onChanged: (val) {
+                                _selectedYear = val.trim();
+                              },
+                              validator: (val) {
+                                // Case 1: No month selected
+                                if (_selectedMonth == null ||
+                                    _selectedMonth!.isEmpty) {
+                                  // If no month, year is optional
+                                  if (val == null || val.trim().isEmpty) {
+                                    return null; // ✅ allow empty year
+                                  }
+                                }
+
+                                // Case 2: Month selected, so year is required
+                                if (val == null || val.trim().isEmpty) {
+                                  return "Enter year";
+                                }
+                                if (!RegExp(r'^\d{4}$').hasMatch(val.trim())) {
+                                  return "Enter valid year";
+                                }
+
+                                final int year = int.parse(val.trim());
+                                final int currentYear = DateTime.now().year;
+
+                                // Allow up to 70 years back and 100 years forward
+                                if (year < currentYear - 70 ||
+                                    year > currentYear + 100) {
+                                  return "Year out of range";
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+
                   const SizedBox(height: 20),
 
                   // --- Skills ---
@@ -464,6 +617,7 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
                             label: Text(skill),
                             backgroundColor: hexToColor("#a3ab94"),
                             deleteIcon: const Icon(Icons.close),
+                            side: BorderSide.none,
                             onDeleted: () {
                               setState(() => _selectedSkills.remove(skill));
                             },
@@ -499,6 +653,7 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
                             label: Text(lang),
                             backgroundColor: hexToColor("#a3ab94"),
                             deleteIcon: const Icon(Icons.close),
+                            side: BorderSide.none,
                             onDeleted: () {
                               setState(() => _selectedLanguages.remove(lang));
                             },
@@ -551,28 +706,6 @@ class _WomanProfileScreenState extends State<WomanProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 30),
-
-                  // // Save Button
-                  // SizedBox(
-                  //   width: double.infinity,
-                  //   child: ElevatedButton(
-                  //     onPressed: _saveProfile,
-                  //     style: ElevatedButton.styleFrom(
-                  //       backgroundColor: hexToColor("#4f4f4d"),
-                  //       padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  //     ),
-                  //     child: Text(
-                  //       'Save Changes',
-                  //       style: GoogleFonts.openSans(
-                  //         textStyle: TextStyle(
-                  //           fontSize: 15,
-                  //           color: hexToColor("#f5f2e9"),
-                  //           fontWeight: FontWeight.bold,
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
                   bigGreyButton(
                     onPressed: _saveProfile,
                     label: "Save Changes",

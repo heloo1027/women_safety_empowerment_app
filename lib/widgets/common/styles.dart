@@ -1,5 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sizer/sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 /// Common page padding
 const EdgeInsets kPagePadding = EdgeInsets.all(16.0);
@@ -20,14 +24,15 @@ Card buildStyledCard({
     color: color,
     elevation: 8.0,
     shape: kCardShape,
-    margin: margin ?? const EdgeInsets.symmetric(horizontal: 5, vertical: 12), // spacing outside the card
+    margin: margin ??
+        const EdgeInsets.symmetric(
+            horizontal: 5, vertical: 12), // spacing outside the card
     child: Padding(
       padding: padding,
       child: child,
     ),
   );
 }
-
 
 /// Common styled button
 Widget bigGreyButton({
@@ -61,25 +66,156 @@ Widget bigGreyButton({
   );
 }
 
-// // You can create a static class or a constant for your dialog styles.
-// class AppStyles {
-//   // A style for a success dialog
-//   static final ThemeData successDialogTheme = ThemeData(
-//     // dialogBackgroundColor: Colors.lightGreen[100],
-//     textButtonTheme: TextButtonThemeData(
-//       style: TextButton.styleFrom(
-//         foregroundColor: Colors.green,
-//       ),
-//     ),
-//   );
+/// Builds a styled BottomNavigationBar
+BottomNavigationBar buildStyledBottomNav({
+  required int? currentIndex,
+  required Function(int) onTap,
+  required List<BottomNavigationBarItem> items,
+}) {
+  bool noSelection = currentIndex == null;
 
-//   // A style for an error dialog
-//   static final ThemeData errorDialogTheme = ThemeData(
-//     // dialogBackgroundColor: Colors.red[100],
-//     textButtonTheme: TextButtonThemeData(
-//       style: TextButton.styleFrom(
-//         foregroundColor: Colors.red,
-//       ),
-//     ),
-//   );
-// }
+  return BottomNavigationBar(
+    type: BottomNavigationBarType.fixed,
+    elevation: 0,
+    backgroundColor: const Color(0xFFDDDDDD),
+    items: items,
+    currentIndex: noSelection ? 0 : currentIndex!, // must always be valid
+    selectedItemColor: noSelection
+        ? Colors.grey
+        : const Color(0xFF4a6741), // 👈 disable highlight
+    unselectedItemColor: Colors.grey,
+    onTap: onTap,
+    selectedLabelStyle: GoogleFonts.openSans(
+      fontSize: 14,
+      fontWeight: FontWeight.bold,
+      color: noSelection ? Colors.grey : const Color(0xFF4a6741),
+    ),
+    unselectedLabelStyle: GoogleFonts.openSans(
+      fontSize: 12,
+      color: Colors.grey,
+    ),
+  );
+}
+
+/// Styled AppBar (uses Sizer + hexToColor for consistency)
+PreferredSizeWidget buildStyledAppBar({
+  required String title,
+  Color backgroundColor = const Color(0xFFDDDDDD),
+  Color textColor = const Color(0xFF4a6741),
+  double fontSize = 18,
+  Widget? leading,
+  List<Widget>? actions, //  Add optional actions
+}) {
+  return AppBar(
+    title: Text(
+      title,
+      style: GoogleFonts.openSans(
+        fontWeight: FontWeight.bold,
+        fontSize: fontSize.sp, // responsive font size
+        color: textColor,
+      ),
+    ),
+    backgroundColor: backgroundColor,
+    iconTheme: IconThemeData(color: textColor),
+    leading: leading,
+    actions: actions, // ✅ Use actions here
+  );
+}
+
+/// Styled notification
+Widget buildNotificationCard({
+  required String title,
+  required String body,
+  String? url,
+  required String formattedTime,
+  required BuildContext context,
+}) {
+  return Card(
+    color: const Color(0xFFf5f2e9),
+    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+    elevation: 3,
+    child: ListTile(
+      title: Text(
+        title,
+        style: GoogleFonts.openSans(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: RichText(
+              text: TextSpan(
+                style: GoogleFonts.openSans(
+                  fontSize: 13,
+                  color: Colors.black87,
+                ),
+                children: [
+                  TextSpan(text: body + ' '),
+                  if (url != null)
+                    TextSpan(
+                      text: 'location',
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () async {
+                          Uri uri = Uri.parse(url);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri,
+                                mode: LaunchMode.externalApplication);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Could not launch $url')),
+                            );
+                          }
+                        },
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              formattedTime,
+              style: GoogleFonts.openSans(
+                fontSize: 12,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Reusable Search Bar
+Widget buildSearchBar({
+  required TextEditingController controller,
+  required Function(String) onChanged,
+  String hintText = "Search",
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    child: TextField(
+      controller: controller,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        hintText: hintText,
+        prefixIcon: const Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+    ),
+  );
+}

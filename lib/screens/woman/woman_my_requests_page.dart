@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
-import 'woman_chat_page.dart'; // <-- make sure this import path is correct
+import 'woman_chat_page.dart';
 
 class WomanMyRequestsPage extends StatefulWidget {
   const WomanMyRequestsPage({Key? key}) : super(key: key);
@@ -24,14 +27,36 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
       );
     }
 
+    Widget _buildDetailRow(String label, String value) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "$label: ",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Requests"),
-      ),
+      appBar: buildStyledAppBar(title: "My Requests"), // ✅ reuse appbar
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('womanRequests')
-            .where('womanId', isEqualTo: currentUser!.uid) // only current user
+            .where('womanId', isEqualTo: currentUser!.uid)
             .orderBy('createdAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
@@ -67,132 +92,136 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
               final ngoId = data['ngoId'] ?? '';
               final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
 
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 3,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.request_page, color: Colors.blue, size: 40),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('ngoProfiles')
+                    .doc(ngoId)
+                    .get(),
+                builder: (context, ngoSnapshot) {
+                  String ngoName = "Unknown NGO";
+                  if (ngoSnapshot.hasData && ngoSnapshot.data!.exists) {
+                    final ngoData =
+                        ngoSnapshot.data!.data() as Map<String, dynamic>;
+                    ngoName = ngoData['name'] ?? "Unknown NGO";
+                  }
+
+                  return buildStyledCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // NGO name + Status in one row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Fetch NGO name from ngoProfiles using ngoId
-                            FutureBuilder<DocumentSnapshot>(
-                              future: FirebaseFirestore.instance
-                                  .collection('ngoProfiles')
-                                  .doc(ngoId)
-                                  .get(),
-                              builder: (context, ngoSnapshot) {
-                                if (ngoSnapshot.connectionState == ConnectionState.waiting) {
-                                  return const Text("Fetching NGO...");
-                                }
-                                if (!ngoSnapshot.hasData || !ngoSnapshot.data!.exists) {
-                                  return const Text("NGO: Unknown");
-                                }
-                                final ngoData = ngoSnapshot.data!.data() as Map<String, dynamic>;
-                                final ngoName = ngoData['name'] ?? 'Unknown NGO';
-                                return Text(
-                                  "NGO: $ngoName",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 4),
-                            Text("Category: $category"),
-                            Text("Item: $item"),
-                            Text("Quantity: $quantity"),
-                            Text("Description: $description"),
-                            if (createdAt != null)
-                              Text(
-                                "Created at: ${createdAt.day}/${createdAt.month}/${createdAt.year}",
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
-                            const SizedBox(height: 6),
                             Text(
-                              "Status: $status",
-                              style: TextStyle(
+                              ngoName,
+                              style: GoogleFonts.openSans(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
                                 color: status == "Approved"
-                                    ? Colors.green
+                                    ? Colors.green.shade100
                                     : status == "Rejected"
-                                        ? Colors.red
-                                        : Colors.orange,
+                                        ? Colors.red.shade100
+                                        : Colors.orange.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                status,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: status == "Approved"
+                                      ? Colors.green
+                                      : status == "Rejected"
+                                          ? Colors.red
+                                          : Colors.orange,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      Column(
-                        children: [
-                          if (status == "Pending") // show edit button only if Pending
+
+                        const SizedBox(height: 12),
+
+                        // Category / Item / Quantity
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDetailRow("Category", category),
+                            const SizedBox(height: 4),
+                            _buildDetailRow("Item", item),
+                            const SizedBox(height: 4),
+                            _buildDetailRow("Quantity", quantity),
+                          ],
+                        ),
+
+                        // Description block
+                        if (description.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            "Description:",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              description,
+                              style: const TextStyle(fontSize: 14, height: 1.4),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+
+                        // Requested on + Chat button in same row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (createdAt != null)
+                              Text(
+                                "Requested on: ${createdAt.day}/${createdAt.month}/${createdAt.year}",
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                              ),
                             IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.orange),
+                              icon: Icon(Icons.chat,
+                                  color: hexToColor('#4a6741')),
                               onPressed: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => EditRequestPage(
-                                      requestId: requests[index].id,
-                                      requestData: data,
+                                    builder: (context) => WomanChatPage(
+                                      receiverId: ngoId,
+                                      receiverName: ngoName,
                                     ),
                                   ),
                                 );
                               },
                             ),
-                          IconButton(
-                            icon: const Icon(Icons.chat, color: Colors.blue),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => WomanChatPage(
-                                    receiverId: ngoId,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           );
         },
-      ),
-    );
-  }
-}
-
-// Placeholder EditRequestPage
-class EditRequestPage extends StatelessWidget {
-  final String requestId;
-  final Map<String, dynamic> requestData;
-
-  const EditRequestPage(
-      {Key? key, required this.requestId, required this.requestData})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Edit Request")),
-      body: Center(
-        child: Text("Edit request for ${requestData['item']} here."),
       ),
     );
   }

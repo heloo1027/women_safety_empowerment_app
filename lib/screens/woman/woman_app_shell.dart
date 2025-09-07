@@ -5,14 +5,15 @@ import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
 import 'package:women_safety_empowerment_app/screens/woman/woman_view_services_page.dart';
 import 'package:women_safety_empowerment_app/screens/woman/woman_chat_list_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_chat_page.dart';
+// import 'package:women_safety_empowerment_app/screens/woman/woman_chat_page.dart';
 import 'package:women_safety_empowerment_app/screens/woman/woman_my_services_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_my_offer_service_page.dart';
+// import 'package:women_safety_empowerment_app/screens/woman/woman_my_offer_service_page.dart';
 import 'package:women_safety_empowerment_app/screens/woman/woman_profile_page.dart';
 import 'package:women_safety_empowerment_app/screens/woman/woman_job_screen.dart';
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
-import 'package:women_safety_empowerment_app/widgets/woman/sos_button.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_sos_page.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
 //import 'package:women_safety_empowerment_app/widgets/common/user_profile_card.dart';
 import 'package:women_safety_empowerment_app/screens/woman/notifications_screen.dart';
@@ -46,7 +47,7 @@ class _WomanAppShellState extends State<WomanAppShell> {
   static final List<String> _titles = <String>[
     'Job',
     'Chat',
-    'SOS',
+    'SOS Notifications',
     'Profile',
   ];
 
@@ -399,37 +400,15 @@ class _WomanAppShellState extends State<WomanAppShell> {
         ),
       ),
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: hexToColor("#dddddd"),
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work),
-            label: 'Job',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.report),
-            label: 'SOS',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+      bottomNavigationBar: buildStyledBottomNav(
         currentIndex: _selectedIndex,
-        selectedItemColor: hexToColor("#4a6741"),
-        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        selectedLabelStyle: GoogleFonts.openSans(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-        unselectedLabelStyle: GoogleFonts.openSans(
-          fontSize: 12,
-        ),
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Job'),
+          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Chat'),
+          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'SOS'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
       ),
     );
   }
