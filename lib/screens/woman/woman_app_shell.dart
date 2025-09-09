@@ -30,12 +30,36 @@ class WomanAppShell extends StatefulWidget {
 class _WomanAppShellState extends State<WomanAppShell> {
   int _selectedIndex = 0; // Index for BottomNavigationBar and Drawer highlight
 
-  void _signOut(BuildContext context) async {
+  // void _signOut(BuildContext context) async {
+  //   await FirebaseAuth.instance.signOut();
+  //   Navigator.of(context).pushReplacement(
+  //     MaterialPageRoute(builder: (context) => const LoginScreen()),
+  //   );
+  // }
+Future<void> _signOut(BuildContext context) async {
+  try {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'fcmToken': FieldValue.delete(),
+      });
+    }
+
     await FirebaseAuth.instance.signOut();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+
+    if (context.mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false, // Clear all previous routes
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Logout failed: $e')),
     );
   }
+}
 
   static final List<Widget> _pages = <Widget>[
     const WomanJobScreen(),
@@ -47,7 +71,7 @@ class _WomanAppShellState extends State<WomanAppShell> {
   static final List<String> _titles = <String>[
     'Job',
     'Chat',
-    'SOS Notifications',
+    'SOS',
     'Profile',
   ];
 

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'employer_chat_page.dart'; // import your EmployerChatPage
 
 class EmployerChatListPage extends StatelessWidget {
@@ -110,7 +111,7 @@ class EmployerChatListPage extends StatelessWidget {
         final count = unreadSnap.data!.docs.length;
         return CircleAvatar(
           radius: 12,
-          backgroundColor: Colors.red,
+          backgroundColor: hexToColor("#a3ab94"),
           child: Text(
             "$count",
             style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -139,7 +140,7 @@ class EmployerChatListPage extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => EmployerChatPage(
           applicantId: applicantId,
-          employerId: employerId,
+          employerId: employerId, receiverName: applicantName,
         ),
       ),
     );

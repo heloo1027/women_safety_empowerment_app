@@ -1,3 +1,6 @@
+// This is te My Offered Services page to view all services provided by me
+// Users can add a new service here
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -5,8 +8,22 @@ import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'woman_my_services_detail_page.dart';
 import 'woman_my_offer_service_page.dart';
 
-class WomanMyServicesPage extends StatelessWidget {
+class WomanMyServicesPage extends StatefulWidget {
   const WomanMyServicesPage({Key? key}) : super(key: key);
+
+  @override
+  State<WomanMyServicesPage> createState() => _WomanMyServicesPageState();
+}
+
+class _WomanMyServicesPageState extends State<WomanMyServicesPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,106 +57,123 @@ class WomanMyServicesPage extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('services')
-            .where('userId', isEqualTo: userId)
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          // 🔍 Search Bar
+          buildSearchBar(
+            controller: _searchController,
+            hintText: "Search by title or category",
+            onChanged: (query) {
+              setState(() {
+                _searchQuery = query.toLowerCase();
+              });
+            },
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('services')
+                  .where('userId', isEqualTo: userId)
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          final serviceDocs = snapshot.data!.docs;
-          if (serviceDocs.isEmpty) {
-            return const Center(
-              child: Text("You haven't offered any services yet."),
-            );
-          }
+                final serviceDocs = snapshot.data!.docs;
 
-          return ListView(
-            padding: const EdgeInsets.all(12),
-            children: serviceDocs.map((doc) {
-              Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+                // Apply search filter
+                final filteredDocs = serviceDocs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final title = (data['title'] ?? '').toString().toLowerCase();
+                  final category =
+                      (data['category'] ?? '').toString().toLowerCase();
+                  return title.contains(_searchQuery) ||
+                      category.contains(_searchQuery);
+                }).toList();
 
-              String postedDate = '';
-              if (data['createdAt'] != null) {
-                DateTime date = (data['createdAt'] as Timestamp).toDate();
-                postedDate = '${date.day}/${date.month}/${date.year}';
-              }
-              return buildStyledCard(
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.all(2), // 👈 controls inner padding
-                  title: Text(
-                    data['title'] ?? "No Title",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
+                if (filteredDocs.isEmpty) {
+                  return const Center(
+                    child: Text("No matching services found."),
+                  );
+                }
 
-                      // Price
-                      RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                              fontSize: 14, color: Colors.black),
-                          children: [
-                            const TextSpan(
-                              text: "Price: ",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                return ListView(
+                  padding: const EdgeInsets.all(12),
+                  children: filteredDocs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+
+                    String postedDate = '';
+                    if (data['createdAt'] != null) {
+                      final date = (data['createdAt'] as Timestamp).toDate();
+                      postedDate = '${date.day}/${date.month}/${date.year}';
+                    }
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => WomanMyServiceDetailPage(
+                              serviceId: doc.id,
+                              data: data,
                             ),
-                            TextSpan(text: "RM ${data['price'] ?? 'N/A'}"),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Category
-                      RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                              fontSize: 14, color: Colors.black),
+                          ),
+                        );
+                      },
+                      child: buildWhiteCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const TextSpan(
-                              text: "Category: ",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            // Title & Category
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    data['title'] ?? 'No Title',
+                                    style: kTitleTextStyle,
+                                  ),
+                                ),
+                                buildGreenChip(data['category'] ?? 'Other'),
+                              ],
                             ),
-                            TextSpan(text: data['category'] ?? 'N/A'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 6),
+                            vSpace(12),
 
-                      if (postedDate.isNotEmpty)
-                        Text(
-                          "Created on: $postedDate",
-                          style:
-                              const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => WomanMyServiceDetailPage(
-                          serviceId: doc.id,
-                          data: data,
+                            // Price
+                            if (data['price'] != null &&
+                                data['price'].toString().isNotEmpty)
+                              Text(
+                                "Price: RM ${data['price']}",
+                              ),
+                            vSpace(6),
+
+                            // Location
+                            // if (data['location'] != null)
+                            //   Text(
+                            //     "Location: ${data['location']}",
+                            //     style: kSubtitleTextStyle,
+                            //   ),
+                            // vSpace(6),
+
+                            // Posted Date
+                            if (postedDate.isNotEmpty)
+                              Text(
+                                "Created on: $postedDate",
+                                style: kSmallTextStyle,
+                              ),
+                          ],
                         ),
                       ),
                     );
-                  },
-                ),
-              );
-            }).toList(),
-          );
-        },
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

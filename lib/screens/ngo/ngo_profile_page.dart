@@ -102,7 +102,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     try {
       String? imageUrl = await _uploadImageToCloudinary(File(pickedFile.path));
       if (imageUrl != null) {
-        await FirebaseFirestore.instance.collection("ngo").doc(uid).set({
+        await FirebaseFirestore.instance.collection("ngoProfiles").doc(uid).set({
           'profileImage': imageUrl,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));

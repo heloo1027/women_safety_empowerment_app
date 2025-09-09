@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class EditJobPage extends StatefulWidget {
   final Map<String, dynamic> jobData;
@@ -110,17 +111,8 @@ void initState() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Edit Job',
-          style: GoogleFonts.openSans(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: hexToColor("#4a6741"),
-          ),
-        ),
-        backgroundColor: hexToColor("#dddddd"),
-        iconTheme: IconThemeData(color: hexToColor("#4a6741")),
+      appBar: buildStyledAppBar(
+        title: 'Edit Job'
       ),
       body: _isLoading
           ? Center(

@@ -27,13 +27,31 @@ class _NGOHomeScreenState extends State<NGOHomeScreen> {
   Widget? _currentPage; // Allows showing drawer-only pages
 
   // Function to sign out user and navigate to LoginScreen
-  void _signOut(BuildContext context) async {
-    await FirebaseAuth.instance.signOut(); // Firebase sign out
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-          builder: (context) => const LoginScreen()), // Navigate to login
+Future<void> _signOut(BuildContext context) async {
+  try {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'fcmToken': FieldValue.delete(),
+      });
+    }
+
+    await FirebaseAuth.instance.signOut();
+
+    if (context.mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false, // Clear all previous routes
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Logout failed: $e')),
     );
   }
+}
+
 
   // List of pages for BottomNavigationBar
   final List<Widget> _pages = <Widget>[

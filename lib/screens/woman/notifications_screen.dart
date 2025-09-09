@@ -59,11 +59,12 @@ class NotificationsPage extends StatelessWidget {
               String formattedTime = '';
               if (timestamp != null) {
                 DateTime dateTime = timestamp.toDate();
-                // Corrected format string for "Day, Month Date, Year Hour:Minute AM/PM"
                 formattedTime =
                     DateFormat('EEEE, MMMM d, y, h:mm a').format(dateTime);
               }
-              return buildNotificationCard(
+
+              return _buildNotificationCard(
+                docId: doc.id, // pass the Firestore document ID
                 title: title,
                 body: messageText,
                 url: url,
@@ -73,6 +74,81 @@ class NotificationsPage extends StatelessWidget {
             }).toList(),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard({
+    required String docId,
+    required String title,
+    required String body,
+    required String? url,
+    required String formattedTime,
+    required BuildContext context,
+  }) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // 🔹 Title + Delete button in the same row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: kTitleTextStyle.copyWith(fontSize: 13),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () async {
+                  await FirebaseFirestore.instance
+                      .collection('notifications')
+                      .doc(docId)
+                      .delete();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Notification deleted")),
+                  );
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 4),
+
+          // 🔹 Body + Location inline
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(color: Colors.black), // default text style
+              children: [
+                TextSpan(text: body + " "), // body content
+                if (url != null)
+                  TextSpan(
+                    text: "location", // friendly label
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () async {
+                        if (await canLaunchUrl(Uri.parse(url))) {
+                          await launchUrl(Uri.parse(url));
+                        }
+                      },
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+        //  Timestamp
+          Text(formattedTime, style: kSmallTextStyle),
+        ]),
       ),
     );
   }

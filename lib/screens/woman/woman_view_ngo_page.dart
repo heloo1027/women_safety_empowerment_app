@@ -111,7 +111,7 @@ class _WomanViewNGOPageState extends State<WomanViewNGOPage> {
                     final description = data['description'] ?? '';
                     final imageUrl = data['profileImage'] ?? '';
 
-                    return buildStyledCard(
+                    return buildWhiteCard(
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 8, horizontal: 8),

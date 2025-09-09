@@ -2,59 +2,98 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sizer/sizer.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class WomanViewJobScreen extends StatelessWidget {
   final String jobId;
   const WomanViewJobScreen({super.key, required this.jobId});
 
-  Future<void> _applyForJob(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("You must be logged in to apply.")),
-      );
-      return;
-    }
-
-    final userId = user.uid;
-
-    // 🔹 Check if resume exists in womanProfiles
-    final userDoc = await FirebaseFirestore.instance
-        .collection('womanProfiles')
-        .doc(userId)
-        .get();
-
-    if (!userDoc.exists ||
-        (userDoc.data()?['resume'] == null ||
-            userDoc.data()?['resume'] == "")) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text("Please upload a resume to your profile before applying."),
-        ),
-      );
-      return;
-    }
-
-    // 🔹 Save application under jobs/{jobId}/applications/{userId}
-    await FirebaseFirestore.instance
-        .collection('jobs')
-        .doc(jobId)
-        .collection('applications')
-        .doc(userId) // use userId as docId so a user can only apply once
-        .set({
-      "userId": userId,
-      "appliedAt": FieldValue.serverTimestamp(),
-      "status": "pending",
-    });
-
+  Future<void> _applyForJob(BuildContext context, String jobId) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Application submitted successfully.")),
+      const SnackBar(content: Text("You must be logged in to apply.")),
     );
+    return;
   }
+
+  final userId = user.uid;
+
+  // 🔹 Fetch user profile
+  final userDoc = await FirebaseFirestore.instance
+      .collection('womanProfiles')
+      .doc(userId)
+      .get();
+
+  if (!userDoc.exists) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please complete your profile before applying."),
+      ),
+    );
+    return;
+  }
+
+  final data = userDoc.data() ?? {};
+
+  // 🔹 Validate required fields
+  final resume = data['resume'];
+  final education = data['education'];
+  final skills = data['skills'];
+  final languages = data['languages'];
+
+  if (resume == null || resume.toString().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please upload a resume before applying.")),
+    );
+    return;
+  }
+
+  if (education == null ||
+      education['course'] == null ||
+      education['course'].toString().isEmpty ||
+      education['institution'] == null ||
+      education['institution'].toString().isEmpty ||
+      education['expectedFinish'] == null ||
+      education['expectedFinish'].toString().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please complete your education details.")),
+    );
+    return;
+  }
+
+  if (skills == null || (skills is List && skills.isEmpty)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please add at least one skill.")),
+    );
+    return;
+  }
+
+  if (languages == null || (languages is List && languages.isEmpty)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please add at least one language.")),
+    );
+    return;
+  }
+
+  // 🔹 Save application under jobs/{jobId}/applications/{userId}
+  await FirebaseFirestore.instance
+      .collection('jobs')
+      .doc(jobId)
+      .collection('applications')
+      .doc(userId) // use userId as docId so a user can only apply once
+      .set({
+    "userId": userId,
+    "appliedAt": FieldValue.serverTimestamp(),
+    "status": "pending",
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Application submitted successfully.")),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -105,22 +144,9 @@ class WomanViewJobScreen extends StatelessWidget {
             }
 
             return Scaffold(
-              appBar: AppBar(
-                title: Text(
-                  'Job Details',
-                  style: GoogleFonts.openSans(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.sp,
-                    color: hexToColor("#4a6741"),
-                  ),
-                ),
-                backgroundColor: hexToColor("#dddddd"),
-                iconTheme: IconThemeData(
-                  color: hexToColor("#4a6741"),
-                ),
-              ),
+              appBar: buildStyledAppBar(title: "Job Details"),
               body: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: kPagePadding,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -151,54 +177,25 @@ class WomanViewJobScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    vSpace(8),
 
                     // Location & Salary
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.location_on,
-                                size: 20, color: hexToColor("#4a6741")),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                jobData['location'] ?? 'Not specified',
-                                style: GoogleFonts.lato(
-                                    fontSize: 15, color: Colors.grey[800]),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(Icons.attach_money,
-                                size: 20, color: hexToColor("#4a6741")),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                jobData['salary'] ?? 'Not specified',
-                                style: GoogleFonts.lato(
-                                    fontSize: 15, color: Colors.grey[800]),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    buildInfoRow(
+                      text: jobData['location'] ?? 'Not specified',
+                      icon: Icons.location_on,
                     ),
-                    const SizedBox(height: 12),
+                    vSpace(6),
+                    buildInfoRow(
+                      text: jobData['salary'] != null
+                          ? 'RM ${jobData['salary']}'
+                          : 'Not specified',
+                      icon: Icons.money_rounded,
+                    ),
+                    vSpace(12),
 
                     // Description
-                    Text(
-                      "Description:",
-                      style: GoogleFonts.openSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
+                    buildSectionTitle("Description:"),
+                    vSpace(6),
                     Text(
                       jobData['description'],
                       style: GoogleFonts.lato(
@@ -208,29 +205,16 @@ class WomanViewJobScreen extends StatelessWidget {
                       ),
                       textAlign: TextAlign.justify,
                     ),
-                    const SizedBox(height: 12),
+                    vSpace(12),
 
                     // Required Skills
-                    Text(
-                      "Required Skills:",
-                      style: GoogleFonts.openSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
+                    buildSectionTitle("Required Skills:"),
+                    vSpace(6),
                     Wrap(
                       spacing: 8,
                       runSpacing: 6,
                       children: (jobData['requiredSkills'] as List? ?? [])
-                          .map((skill) => Chip(
-                                label: Text(
-                                  skill,
-                                  style: GoogleFonts.lato(
-                                      fontSize: 14, color: Colors.black87),
-                                ),
-                                backgroundColor: hexToColor("#e0e0e0"),
-                              ))
+                          .map((skill) => buildStyledChip(skill))
                           .toList(),
                     ),
 
@@ -242,11 +226,13 @@ class WomanViewJobScreen extends StatelessWidget {
                             ? 'Posted on: $postedDate'
                             : 'Posted on: -',
                         style: GoogleFonts.lato(
-                            fontSize: 12, color: Colors.grey[600]),
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    vSpace(12),
 
                     // ===== Apply Button =====
                     if (user != null)
@@ -267,50 +253,23 @@ class WomanViewJobScreen extends StatelessWidget {
                           final hasApplied = appSnapshot.data?.exists ?? false;
 
                           return Center(
-                            child: SizedBox(
-                              width: double.infinity, // Full width
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: hasApplied
-                                      ? hexToColor('#4f4f4d')
-                                      : hexToColor("#a3ab94"),
-                                  disabledBackgroundColor:
-                                      hexToColor('#4f4f4d'),
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 16.0),
-                                ),
-                                onPressed: hasApplied
-                                    ? null
-                                    : () => _applyForJob(context),
-                                child: Text(
-                                  hasApplied ? "Applied" : "Apply",
-                                  style: GoogleFonts.openSans(
-                                    textStyle: TextStyle(
-                                      fontSize: 15,
-                                      color: hexToColor("#f5f2e9"),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            child: bigGreyButton(
+                              onPressed: hasApplied
+                                  ? null
+                                  : () => _applyForJob(context, jobId),
+                              label: hasApplied ? "Applied" : "Apply",
                             ),
                           );
                         },
                       ),
 
                     Divider(color: Colors.grey[400]),
-                    const SizedBox(height: 20),
+                    vSpace(20),
 
                     // ===== Company Info Section =====
                     if (companyData.isNotEmpty) ...[
-                      Text(
-                        'Company Information',
-                        style: GoogleFonts.openSans(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      // buildSectionTitle('Company Information'),
+                      // vSpace(16),
                       Row(
                         children: [
                           if ((companyData['companyLogo'] ?? '').isNotEmpty)
@@ -335,70 +294,30 @@ class WomanViewJobScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 20, color: hexToColor("#4a6741")),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              companyData['companyAddress'] ?? 'N/A',
-                              style: GoogleFonts.lato(
-                                  fontSize: 15, color: Colors.grey[800]),
-                            ),
-                          ),
-                        ],
+                      vSpace(12),
+                      buildInfoRow(
+                        text: companyData['companyAddress'] ?? 'N/A',
+                        icon: Icons.location_on,
                       ),
-                      const SizedBox(height: 10),
+                      vSpace(10),
                       if ((companyData['companyWebsite'] ?? '').isNotEmpty)
-                        Row(
-                          children: [
-                            Icon(Icons.language_rounded,
-                                size: 20, color: hexToColor("#4a6741")),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () async {
-                                  final url = companyData['companyWebsite'];
-                                  if (await canLaunchUrl(Uri.parse(url))) {
-                                    await launchUrl(Uri.parse(url));
-                                  }
-                                },
-                                child: Text(
-                                  companyData['companyWebsite'],
-                                  style: GoogleFonts.lato(
-                                      fontSize: 15, color: Colors.grey[800]),
-                                ),
-                              ),
-                            ),
-                          ],
+                        buildInfoRow(
+                          text: companyData['companyWebsite'],
+                          icon: Icons.language_rounded,
                         ),
-                      const SizedBox(height: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Description:",
-                            style: GoogleFonts.openSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            companyData['companyDescription'] ?? 'N/A',
-                            style: GoogleFonts.lato(
-                              fontSize: 15,
-                              height: 1.5,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.justify,
-                          ),
-                        ],
+                      vSpace(10),
+                      buildSectionTitle("Description:"),
+                      vSpace(6),
+                      Text(
+                        companyData['companyDescription'] ?? 'N/A',
+                        style: GoogleFonts.lato(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.justify,
                       ),
-                      const SizedBox(height: 24),
+                      vSpace(24),
                     ],
                   ],
                 ),

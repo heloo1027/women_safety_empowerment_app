@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class NGORequestDonationPage extends StatefulWidget {
   const NGORequestDonationPage({Key? key}) : super(key: key);
@@ -41,7 +43,10 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(doc == null ? "Post Donation Request" : "Edit Donation Request"),
+        title: Text(
+          doc == null ? "Post Donation Request" : "Edit Donation Request",
+          style: kTitleTextStyle,
+        ),
         content: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -91,14 +96,16 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
           TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text("Cancel")),
-          ElevatedButton(
+          TextButton(
             onPressed: () async {
               if (_formKey.currentState!.validate()) {
                 final uid = FirebaseAuth.instance.currentUser!.uid;
 
                 if (doc == null) {
                   // Add new
-                  await FirebaseFirestore.instance.collection('ngoRequests').add({
+                  await FirebaseFirestore.instance
+                      .collection('ngoRequests')
+                      .add({
                     'ngoId': uid,
                     'category': category,
                     'status': status,
@@ -120,9 +127,8 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(doc == null
-                        ? "Request Posted"
-                        : "Request Updated"),
+                    content: Text(
+                        doc == null ? "Request Posted" : "Request Updated"),
                   ),
                 );
               }
@@ -139,15 +145,6 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Request Donation"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showRequestDialog(),
-          ),
-        ],
-      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('ngoRequests')
@@ -162,8 +159,8 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
           final requests = snapshot.data!.docs;
 
           if (requests.isEmpty) {
-            return const Center(
-                child: Text("No donation requests posted yet."));
+            return Center(
+                child: Text("No donation requests posted yet.", style: kSubtitleTextStyle));
           }
 
           return ListView.builder(
@@ -175,38 +172,52 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
               final createdAt = data['createdAt'] != null
                   ? (data['createdAt'] as Timestamp).toDate()
                   : null;
+              return buildWhiteCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Category left, status chip right
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(data['category'] ?? "Unknown",
+                            style: kTitleTextStyle),
+                        buildGreenChip(data['status'] ?? "N/A"),
+                      ],
+                    ),
+                    vSpace(8),
 
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                child: ListTile(
-                  title: Text(data['category'] ?? "Unknown"),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Status: ${data['status'] ?? 'N/A'}"),
-                      const SizedBox(height: 4),
-                      Text(data['description'] ?? ""),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (createdAt != null)
-                        Text(
-                          "${createdAt.day}/${createdAt.month}/${createdAt.year}",
-                          style: const TextStyle(fontSize: 12),
+                    // Description
+                    Text("Description:"),
+                    Text(data['description'] ?? ""),
+
+                    // Posted date and edit button on the same row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (createdAt != null)
+                          Text(
+                            "Posted on ${createdAt.day}/${createdAt.month}/${createdAt.year}",
+                            style: kSmallTextStyle,
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _showRequestDialog(doc: doc),
                         ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _showRequestDialog(doc: doc),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ),
               );
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: hexToColor("#a3ab94"), // set the button color
+        onPressed: () => _showRequestDialog(),
+        child: const Icon(Icons.add,
+            color: Colors.white), // icon white for contrast
       ),
     );
   }

@@ -149,15 +149,15 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.description, size: 20),
-                const SizedBox(width: 8),
+                // const Icon(Icons.description, size: 20),
+                // const SizedBox(width: 8),
                 Expanded(
                   child: Text(widget.description,
                       style: const TextStyle(fontSize: 16)),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
             Divider(
               color: hexToColor('#4a6741'),
               thickness: 1,
@@ -176,7 +176,7 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
             Padding(
               padding: const EdgeInsets.only(left: 8.0),
               child: const Text(
-                "Donate to us and we will help those in need",
+                "We are currently receiving donations for items below",
                 style: TextStyle(
                     fontSize: 11,
                     // fontStyle: FontStyle.italic,
@@ -219,7 +219,7 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
                         ? "${createdAt.day}/${createdAt.month}/${createdAt.year}"
                         : '';
 
-                    return buildStyledCard(
+                    return buildWhiteCard(
                       margin: const EdgeInsets.symmetric(vertical: 6),
                       padding: const EdgeInsets.all(16),
                       child: Column(

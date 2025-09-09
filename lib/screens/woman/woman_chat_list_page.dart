@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'woman_chat_page.dart';
 
 class WomanChatListPage extends StatelessWidget {
@@ -29,7 +31,11 @@ class WomanChatListPage extends StatelessWidget {
 
           final chatDocs = snapshot.data!.docs;
           if (chatDocs.isEmpty) {
-            return const Center(child: Text("No conversations yet."));
+            return Center(
+                child: Text(
+              "No conversations yet.",
+              style: kSubtitleTextStyle,
+            ));
           }
 
           return ListView.builder(
@@ -38,9 +44,21 @@ class WomanChatListPage extends StatelessWidget {
               final chatDoc = chatDocs[index];
               final data = chatDoc.data() as Map<String, dynamic>;
 
+              // final participants = List<String>.from(data["participants"]);
+              // final otherUserId =
+              //     participants.firstWhere((id) => id != currentUser.uid);
+
+              // final lastMessage = data["lastMessage"] ?? "";
               final participants = List<String>.from(data["participants"]);
-              final otherUserId =
-                  participants.firstWhere((id) => id != currentUser.uid);
+              final otherUserId = participants.firstWhere(
+                (id) => id != currentUser.uid,
+                orElse: () => "",
+              );
+
+              if (otherUserId.isEmpty) {
+                // No valid other participant, skip this chat
+                return const SizedBox.shrink();
+              }
 
               final lastMessage = data["lastMessage"] ?? "";
 
@@ -100,7 +118,7 @@ class WomanChatListPage extends StatelessWidget {
                         } else if (role == "Employer") {
                           displayName =
                               profileData["companyName"] ?? "Employer";
-                          avatarUrl = profileData["logo"];
+                          avatarUrl = profileData["companyLogo"];
                         } else if (role == "NGO") {
                           displayName = profileData["name"] ?? "NGO";
                           avatarUrl = profileData["profileImage"];
@@ -109,10 +127,10 @@ class WomanChatListPage extends StatelessWidget {
 
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: (avatarUrl != null &&
-                                  avatarUrl.isNotEmpty)
-                              ? NetworkImage(avatarUrl)
-                              : null,
+                          backgroundImage:
+                              (avatarUrl != null && avatarUrl.isNotEmpty)
+                                  ? NetworkImage(avatarUrl)
+                                  : null,
                           child: (avatarUrl == null || avatarUrl.isEmpty)
                               ? Text(displayName[0].toUpperCase())
                               : null,
@@ -123,7 +141,47 @@ class WomanChatListPage extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        onTap: () {
+                        trailing: StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection("chats")
+                              .doc(chatDoc.id)
+                              .collection("messages")
+                              .where("receiverId", isEqualTo: currentUser.uid)
+                              .where("isRead", isEqualTo: false)
+                              .snapshots(),
+                          builder: (context, unreadSnap) {
+                            if (unreadSnap.hasData &&
+                                unreadSnap.data!.docs.isNotEmpty) {
+                              final count = unreadSnap.data!.docs.length;
+                              return CircleAvatar(
+                                radius: 12,
+                                backgroundColor: hexToColor("#a3ab94"),
+                                child: Text(
+                                  "$count",
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 12,),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                        onTap: () async {
+                          // Mark unread as read
+                          final unreadMessages = await FirebaseFirestore
+                              .instance
+                              .collection("chats")
+                              .doc(chatDoc.id)
+                              .collection("messages")
+                              .where("receiverId", isEqualTo: currentUser.uid)
+                              .where("isRead", isEqualTo: false)
+                              .get();
+
+                          for (var msg in unreadMessages.docs) {
+                            await msg.reference.update({"isRead": true});
+                          }
+
+                          // Open Woman chat page
                           Navigator.push(
                             context,
                             MaterialPageRoute(

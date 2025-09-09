@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
 
 
 /// Common page padding
@@ -51,6 +52,9 @@ Widget bigGreyButton({
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         padding: padding,
+        // Add custom disabled styles
+        disabledBackgroundColor: backgroundColor.withOpacity(0.7), // slightly faded
+        disabledForegroundColor: textColor.withOpacity(0.9), // keep text readable
       ),
       child: Text(
         label,
@@ -65,6 +69,7 @@ Widget bigGreyButton({
     ),
   );
 }
+
 
 /// Builds a styled BottomNavigationBar
 BottomNavigationBar buildStyledBottomNav({
@@ -219,3 +224,112 @@ Widget buildSearchBar({
     ),
   );
 }
+
+
+/// Reusable section header
+Widget buildSectionTitle(String text) {
+  return Text(
+    text,
+    style: GoogleFonts.openSans(
+      fontSize: 16,
+      fontWeight: FontWeight.bold,
+      color: Colors.black87,
+    ),
+  );
+}
+
+
+/// Info row with optional icon
+Widget buildInfoRow({
+  required String text,
+  IconData? icon,
+  Color iconColor = const Color(0xFF4a6741),
+}) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      if (icon != null) ...[
+        Icon(icon, size: 20, color: iconColor),
+        const SizedBox(width: 6),
+      ],
+      Expanded(
+        child: Text(
+          text,
+          style: GoogleFonts.lato(
+            fontSize: 15,
+            color: Colors.grey[800],
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+
+/// Reusable styled chip
+Widget buildStyledChip(String label) {
+  return Chip(
+    label: Text(
+      label,
+      style: GoogleFonts.lato(fontSize: 12, color: Colors.black87),
+    ),
+    backgroundColor: const Color(0xFFE0E0E0),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    ),
+  );
+}
+
+/// Reusable vertical spacer
+Widget vSpace(double height) => SizedBox(height: height);
+
+
+/// Reusable White Card
+Widget buildWhiteCard({required Widget child, EdgeInsetsGeometry? padding, EdgeInsetsGeometry? margin,}) {
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    child: Padding(
+      padding: padding ?? const EdgeInsets.all(16),
+      child: child,
+    ),
+  );
+}
+
+/// Reusable Green Chip for type
+Widget buildGreenChip(String label) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: hexToColor("#a3ab94"),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(fontSize: 12, color: Colors.black),
+    ),
+  );
+}
+
+/// Subtitle / secondary text style
+final TextStyle kSubtitleTextStyle = GoogleFonts.openSans(
+  fontSize: 16,
+  fontWeight: FontWeight.w500,
+  color: Colors.grey[600],
+);
+
+/// Title text style (used for card titles, headings)
+final TextStyle kTitleTextStyle = GoogleFonts.openSans(
+  fontSize: 18,
+  fontWeight: FontWeight.bold,
+  color: Colors.black87,
+);
+
+/// Small text style (used for timestamps, subtitles, etc.)
+final TextStyle kSmallTextStyle = GoogleFonts.openSans(
+  fontSize: 12,
+  color: Colors.grey[600],
+);

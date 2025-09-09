@@ -1,4 +1,7 @@
+// This page is to view all the service that are posted by other
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'woman_requested_services_page.dart';
@@ -24,23 +27,18 @@ class _WomanViewServicesPageState extends State<WomanViewServicesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: buildStyledAppBar(
-        title: "All Services",
-      ),
+      appBar: buildStyledAppBar(title: "All Services"),
       body: Column(
         children: [
-          // 🔍 Search bar
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: buildSearchBar(
-              controller: _searchController,
-              onChanged: (query) {
-                setState(() {
-                  _searchQuery = query.toLowerCase();
-                });
-              },
-              hintText: "Search services...",
-            ),
+          // Search bar
+          buildSearchBar(
+            controller: _searchController,
+            onChanged: (query) {
+              setState(() {
+                _searchQuery = query.toLowerCase();
+              });
+            },
+            hintText: "Search by service or category",
           ),
 
           // 📌 My Requests Button
@@ -59,7 +57,7 @@ class _WomanViewServicesPageState extends State<WomanViewServicesPage> {
             ),
           ),
 
-          // 📋 Service list from Firestore
+          // Service list from Firestore
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -71,10 +69,17 @@ class _WomanViewServicesPageState extends State<WomanViewServicesPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
+                final currentUser = FirebaseAuth.instance.currentUser;
                 final serviceDocs = snapshot.data!.docs;
 
-                // Apply search filter
-                final filteredDocs = serviceDocs.where((doc) {
+                // 🔹 Step 1: Exclude services where userId == current login user
+                final otherUserServices = serviceDocs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return data['userId'] != currentUser?.uid;
+                }).toList();
+
+                // 🔹 Step 2: Apply search filter
+                final filteredDocs = otherUserServices.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final title = (data['title'] ?? '').toString().toLowerCase();
                   final category =
@@ -100,44 +105,46 @@ class _WomanViewServicesPageState extends State<WomanViewServicesPage> {
                       postedDate = '${date.day}/${date.month}/${date.year}';
                     }
 
-                    return buildStyledCard(
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
-                        title: Text(
-                          data['title'] ?? 'No Title',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => WomanViewServicesDetailPage(
+                              serviceId: doc.id,
+                              serviceData: data,
+                            ),
                           ),
-                        ),
-                        subtitle: Column(
+                        );
+                      },
+                      child: buildWhiteCard(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Category: ${data['category'] ?? 'Other'}"),
+                            // Title & Category Chip
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    data['title'] ?? 'No Title',
+                                    style: kTitleTextStyle,
+                                  ),
+                                ),
+                                buildGreenChip(data['category'] ?? 'Other'),
+                              ],
+                            ),
+                            vSpace(12),
                             if (data['price'] != null &&
                                 data['price'].toString().isNotEmpty)
                               Text("Price: RM ${data['price']}"),
+                            vSpace(6),
                             if (postedDate.isNotEmpty)
-                              Text(
-                                'Posted on: $postedDate',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
+                              Text('Posted on: $postedDate',
+                                  style: kSmallTextStyle),
                           ],
                         ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => WomanViewServicesDetailPage(
-                                serviceId: doc.id,
-                                serviceData: data,
-                              ),
-                            ),
-                          );
-                        },
                       ),
                     );
                   }).toList(),

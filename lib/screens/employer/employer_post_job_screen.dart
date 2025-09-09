@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class PostJobFormPage extends StatefulWidget {
   const PostJobFormPage({super.key});
@@ -86,17 +87,8 @@ class _PostJobFormPageState extends State<PostJobFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Post a Job',
-          style: GoogleFonts.openSans(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: hexToColor("#4a6741"),
-          ),
-        ),
-        backgroundColor: hexToColor("#dddddd"),
-        iconTheme: IconThemeData(color: hexToColor("#4a6741")),
+      appBar: buildStyledAppBar(
+        title: 'Post a Job'
       ),
       body: _isLoading
           ? Center(

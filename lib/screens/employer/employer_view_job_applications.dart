@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'employer_chat_page.dart';
 
 // Import your chat page
@@ -43,7 +45,8 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
   }
 
   // 🔹 Update status in Firestore
-  Future<void> _updateStatus(String jobId, String userId, String newStatus) async {
+  Future<void> _updateStatus(
+      String jobId, String userId, String newStatus) async {
     await FirebaseFirestore.instance
         .collection('jobs')
         .doc(jobId)
@@ -55,7 +58,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Job Applications")),
+      appBar: buildStyledAppBar(title: 'Job Applications'),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('jobs')
@@ -115,13 +118,18 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
                             children: [
                               CircleAvatar(
                                 radius: 28,
-                                backgroundImage: userData['profileImage'] != null &&
-                                        userData['profileImage'].toString().isNotEmpty
-                                    ? NetworkImage(userData['profileImage'])
-                                    : null,
+                                backgroundImage:
+                                    userData['profileImage'] != null &&
+                                            userData['profileImage']
+                                                .toString()
+                                                .isNotEmpty
+                                        ? NetworkImage(userData['profileImage'])
+                                        : null,
                                 backgroundColor: Colors.grey.shade300,
                                 child: (userData['profileImage'] == null ||
-                                        userData['profileImage'].toString().isEmpty)
+                                        userData['profileImage']
+                                            .toString()
+                                            .isEmpty)
                                     ? Text(
                                         userData['name'] != null
                                             ? userData['name'][0].toUpperCase()
@@ -165,16 +173,20 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
                           // 🔹 Application details
                           Row(
                             children: [
-                              const Text("📌 Status: "),
+                              const Text("Status: ",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
                               DropdownButton<String>(
                                 value: appData['status'],
                                 items: const [
                                   DropdownMenuItem(
                                       value: "pending", child: Text("Pending")),
                                   DropdownMenuItem(
-                                      value: "accepted", child: Text("Accepted")),
+                                      value: "accepted",
+                                      child: Text("Accepted")),
                                   DropdownMenuItem(
-                                      value: "rejected", child: Text("Rejected")),
+                                      value: "rejected",
+                                      child: Text("Rejected")),
                                 ],
                                 onChanged: (newValue) {
                                   if (newValue != null) {
@@ -184,7 +196,13 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
                               ),
                             ],
                           ),
-                          Text("📅 Applied at: ${_formatDate(appData['appliedAt'])}"),
+                          const Text(
+                            "Applied at: ",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            _formatDate(appData['appliedAt']),
+                          ),
 
                           const SizedBox(height: 10),
 
@@ -193,14 +211,22 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text("🎓 Education",
+                                const Text("Education",
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold)),
                                 Text(
                                     "${userData['education']['course'] ?? ''} at ${userData['education']['institution'] ?? ''}"),
-                                if (userData['education']['expectedFinish'] != null)
-                                  Text(
-                                      "Expected Finish: ${userData['education']['expectedFinish']}"),
+                                if (userData['education']['expectedFinish'] !=
+                                    null)
+                                  const SizedBox(height: 10),
+                                const Text(
+                                  "Expected Finish: ",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  userData['education']['expectedFinish'] ??
+                                      'N/A',
+                                ),
                               ],
                             ),
 
@@ -209,14 +235,16 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
                           // 🔹 Skills
                           if (userData['skills'] != null &&
                               (userData['skills'] as List).isNotEmpty) ...[
-                            const Text("🛠 Skills",
+                            const Text("Skills",
                                 style: TextStyle(fontWeight: FontWeight.bold)),
                             Wrap(
                               spacing: 6,
-                              children: (userData['skills'] as List).map((skill) {
+                              children:
+                                  (userData['skills'] as List).map((skill) {
                                 return Chip(
-                                    label: Text(skill),
-                                    backgroundColor: Colors.blue.shade50);
+                                  label: Text(skill),
+                                  backgroundColor: hexToColor("#a3ab94"),
+                                );
                               }).toList(),
                             ),
                           ],
@@ -226,15 +254,16 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
                           // 🔹 Languages
                           if (userData['languages'] != null &&
                               (userData['languages'] as List).isNotEmpty) ...[
-                            const Text("🌐 Languages",
+                            const Text("Languages",
                                 style: TextStyle(fontWeight: FontWeight.bold)),
                             Wrap(
                               spacing: 6,
                               children:
                                   (userData['languages'] as List).map((lang) {
                                 return Chip(
-                                    label: Text(lang),
-                                    backgroundColor: Colors.green.shade50);
+                                  label: Text(lang),
+                                  backgroundColor: hexToColor("#e5ba9f"),
+                                );
                               }).toList(),
                             ),
                           ],
@@ -255,6 +284,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
                                     builder: (context) => EmployerChatPage(
                                       employerId: employerId,
                                       applicantId: userId,
+                                      receiverName: userData['name'],
                                     ),
                                   ),
                                 );
@@ -270,28 +300,6 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-// 🔹 Placeholder for ChatPage (you should implement real chat UI)
-class ChatPage extends StatelessWidget {
-  final String employerId;
-  final String applicantId;
-
-  const ChatPage({
-    Key? key,
-    required this.employerId,
-    required this.applicantId,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Chat")),
-      body: Center(
-        child: Text("Chat between Employer ($employerId) and Applicant ($applicantId)"),
       ),
     );
   }

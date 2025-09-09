@@ -1,3 +1,5 @@
+// This page is to offer a new service or edit/delete existing services
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -135,11 +137,8 @@ class _WomanMyManageServicePageState extends State<WomanMyManageServicePage> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text("Cancel"),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.pop(context, true),
-            // style: ElevatedButton.styleFrom(
-            //   // backgroundColor: Colors.red,
-            // ),
             child: const Text("Delete"),
           ),
         ],

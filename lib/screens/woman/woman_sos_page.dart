@@ -107,7 +107,7 @@ class _SOSButtonState extends State<SOSButton> {
       await _notifyEmergencyContact(contactInfo, position);
 
       // 6 Save SOS report
-      await FirebaseFirestore.instance.collection('sos_reports').add({
+      await FirebaseFirestore.instance.collection('sosReports').add({
         'userID': uid,
         'latitude': position.latitude,
         'longitude': position.longitude,
@@ -137,50 +137,77 @@ class _SOSButtonState extends State<SOSButton> {
     return true;
   }
 
-  Future<String?> _getEmergencyEmail(String uid) async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('womanProfiles')
-        .doc(uid)
-        .get();
-    if (doc.exists && doc['emergencyEmail'] != null) {
-      return doc['emergencyEmail'];
-    }
-    return null;
+Future<String?> _getEmergencyEmail(String uid) async {
+  DocumentSnapshot doc = await FirebaseFirestore.instance
+      .collection('womanProfiles')
+      .doc(uid)
+      .get();
+
+  if (!doc.exists) {
+    return null; // No profile document at all
   }
 
-  Future<Map<String, dynamic>?> _getEmergencyContact(String email) async {
-    QuerySnapshot query = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .get();
-    if (query.docs.isNotEmpty) {
-      var doc = query.docs.first;
-      return {
-        'userID': doc.id,
-        'fcmToken': doc['fcmToken'],
-      };
-    }
-    return null;
+  // Safely read the field
+  var data = doc.data() as Map<String, dynamic>?;
+
+  if (data == null || data['emergencyEmail'] == null || data['emergencyEmail'].toString().trim().isEmpty) {
+    return null; // Field missing or empty string
   }
 
-  Future<void> _notifyEmergencyContact(
-      Map<String, dynamic> contactInfo, Position position) async {
-    String notificationTitle = '🚨 SOS Alert: Your Friend Needs Help!';
-    String notificationBody =
-        'Your friend (${FirebaseAuth.instance.currentUser!.email}) is in an emergency at https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
+  return data['emergencyEmail'].toString();
+}
 
-    if (contactInfo['fcmToken'] != null) {
-      await sendPushNotification(
-          contactInfo['fcmToken'], notificationTitle, notificationBody);
 
-      await FirebaseFirestore.instance.collection('notifications').add({
-        'toUserID': contactInfo['userID'],
-        'title': notificationTitle,
-        'body': notificationBody,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    }
+Future<Map<String, dynamic>?> _getEmergencyContact(String email) async {
+  QuerySnapshot query = await FirebaseFirestore.instance
+      .collection('users')
+      .where('email', isEqualTo: email)
+      .get();
+
+  if (query.docs.isNotEmpty) {
+    var doc = query.docs.first;
+    var data = doc.data() as Map<String, dynamic>;
+
+    return {
+      'userID': doc.id,
+      'fcmToken': data['fcmToken'], // may be null or empty
+    };
   }
+  return null;
+}
+
+Future<void> _notifyEmergencyContact(
+    Map<String, dynamic> contactInfo, Position position) async {
+  String currentUid = FirebaseAuth.instance.currentUser!.uid;
+
+  // Prevent sending to yourself
+  if (contactInfo['userID'] == currentUid) {
+    _showSnack("Emergency email is linked to your own account. Please update it in Profile Page.");
+    return;
+  }
+
+  String notificationTitle = '🚨 SOS Alert: Your Friend Needs Help!';
+  String notificationBody =
+      'Your friend (${FirebaseAuth.instance.currentUser!.email}) is in an emergency at https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
+
+  // Always save in notifications
+  await FirebaseFirestore.instance.collection('notifications').add({
+    'toUserID': contactInfo['userID'],
+    'title': notificationTitle,
+    'body': notificationBody,
+    'timestamp': FieldValue.serverTimestamp(),
+  });
+
+  // Send FCM only if token exists
+  if (contactInfo['fcmToken'] != null &&
+      contactInfo['fcmToken'].toString().isNotEmpty) {
+    await sendPushNotification(
+        contactInfo['fcmToken'], notificationTitle, notificationBody);
+  } else {
+    // _showSnack("Emergency contact is not logged in. Push notification not sent, but saved in Notifications.");
+  }
+}
+
 
   void _showSnack(String message) {
     ScaffoldMessenger.of(context)

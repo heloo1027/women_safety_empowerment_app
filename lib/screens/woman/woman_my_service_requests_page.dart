@@ -1,6 +1,9 @@
+// This page is to view who has requested for my service
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'woman_chat_page.dart'; // 👈 Import your chat page
 
 class WomanServiceRequestsPage extends StatelessWidget {
@@ -26,7 +29,7 @@ class WomanServiceRequestsPage extends StatelessWidget {
 
   void _updateStatus(String requestId, String newStatus) {
     FirebaseFirestore.instance
-        .collection('service_requests')
+        .collection('serviceRequests')
         .doc(requestId)
         .update({'status': newStatus});
   }
@@ -47,12 +50,10 @@ class WomanServiceRequestsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Requests for $serviceTitle"),
-      ),
+      appBar: buildStyledAppBar(title: "Requests Details"),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('service_requests')
+            .collection('serviceRequests')
             .where('serviceId', isEqualTo: serviceId)
             .orderBy('requestedAt', descending: true)
             .snapshots(),
@@ -91,8 +92,8 @@ class WomanServiceRequestsPage extends StatelessWidget {
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     child: ListTile(
-                      leading:
-                          const Icon(Icons.person, color: Colors.pinkAccent),
+                      // leading:
+                      //     const Icon(Icons.person, color: Colors.pinkAccent),
                       title: Text("Requester: $requesterName"),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,7 +105,7 @@ class WomanServiceRequestsPage extends StatelessWidget {
                                 value: data['status'], // e.g., "cancelled"
                                 onChanged: (newValue) {
                                   FirebaseFirestore.instance
-                                      .collection('service_requests')
+                                      .collection('serviceRequests')
                                       .doc(doc.id)
                                       .update({'status': newValue});
                                 },
@@ -122,11 +123,11 @@ class WomanServiceRequestsPage extends StatelessWidget {
                               ),
                             ],
                           ),
-                          Text("Date: $requestedDate"),
+                          Text("Requested on: $requestedDate"),
                         ],
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.chat, color: Colors.blue),
+                        icon: Icon(Icons.chat, color:  Color(0xFF4a6741),),
                         onPressed: () =>
                             _openChat(context, requesterId, requesterName),
                       ),
