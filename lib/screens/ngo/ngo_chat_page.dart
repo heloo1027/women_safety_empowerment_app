@@ -184,7 +184,7 @@ class _NGOChatPageState extends State<NGOChatPage> {
       // appBar: AppBar(
       //   title: Text("Chat with ${widget.receiverName}", style: kapp,),
       // ),
-            appBar: buildStyledAppBar(
+      appBar: buildStyledAppBar(
         title: widget.receiverName,
       ),
       body: Column(

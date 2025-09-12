@@ -28,21 +28,19 @@ class _EditJobPageState extends State<EditJobPage> {
   String _jobStatus = 'Open';
   List<String> _selectedSkills = [];
 
-@override
-void initState() {
-  super.initState();
-  _titleController = TextEditingController(text: widget.jobData['title']);
-  _descriptionController =
-      TextEditingController(text: widget.jobData['description']);
-  _salaryController = TextEditingController(text: widget.jobData['salary']);
-  _locationController =
-      TextEditingController(text: widget.jobData['location']); 
-  _jobType = widget.jobData['type'] ?? 'Full-time';
-  _jobStatus = widget.jobData['status'] ?? 'Open';
-  _selectedSkills =
-      List<String>.from(widget.jobData['requiredSkills'] ?? []);
-}
-
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.jobData['title']);
+    _descriptionController =
+        TextEditingController(text: widget.jobData['description']);
+    _salaryController = TextEditingController(text: widget.jobData['salary']);
+    _locationController =
+        TextEditingController(text: widget.jobData['location']);
+    _jobType = widget.jobData['type'] ?? 'Full-time';
+    _jobStatus = widget.jobData['status'] ?? 'Open';
+    _selectedSkills = List<String>.from(widget.jobData['requiredSkills'] ?? []);
+  }
 
   @override
   void dispose() {
@@ -111,9 +109,7 @@ void initState() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: buildStyledAppBar(
-        title: 'Edit Job'
-      ),
+      appBar: buildStyledAppBar(title: 'Edit Job'),
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(
@@ -145,11 +141,12 @@ void initState() {
                             // Job title
                             TextFormField(
                               controller: _titleController,
-                              decoration:
-                                  const InputDecoration(labelText: 'Job Title *'),
-                              validator: (value) => value == null || value.isEmpty
-                                  ? 'Please enter job title'
-                                  : null,
+                              decoration: const InputDecoration(
+                                  labelText: 'Job Title *'),
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Please enter job title'
+                                      : null,
                             ),
                             const SizedBox(height: 12),
 
@@ -159,9 +156,10 @@ void initState() {
                               decoration: const InputDecoration(
                                   labelText: 'Description *'),
                               maxLines: 4,
-                              validator: (value) => value == null || value.isEmpty
-                                  ? 'Please enter description'
-                                  : null,
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Please enter description'
+                                      : null,
                             ),
                             const SizedBox(height: 12),
 
@@ -171,18 +169,20 @@ void initState() {
                               decoration:
                                   const InputDecoration(labelText: 'Salary *'),
                               keyboardType: TextInputType.number,
-                              validator: (value) => value == null || value.isEmpty
-                                  ? 'Please enter salary'
-                                  : null,
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Please enter salary'
+                                      : null,
                             ),
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: _locationController,
-                              decoration:
-                                  const InputDecoration(labelText: 'Location *'),
-                              validator: (value) => value == null || value.isEmpty
-                                  ? 'Please enter location'
-                                  : null,
+                              decoration: const InputDecoration(
+                                  labelText: 'Location *'),
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Please enter location'
+                                      : null,
                             ),
                             const SizedBox(height: 12),
 
@@ -192,14 +192,15 @@ void initState() {
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
                                     value: _jobType,
-                                    decoration:
-                                        const InputDecoration(labelText: 'Job Type *'),
-                                    items: ['Full-time', 'Part-time', 'Freelance']
-                                        .map((type) => DropdownMenuItem(
-                                              value: type,
-                                              child: Text(type),
-                                            ))
-                                        .toList(),
+                                    decoration: const InputDecoration(
+                                        labelText: 'Job Type *'),
+                                    items:
+                                        ['Full-time', 'Part-time', 'Freelance']
+                                            .map((type) => DropdownMenuItem(
+                                                  value: type,
+                                                  child: Text(type),
+                                                ))
+                                            .toList(),
                                     onChanged: (value) =>
                                         setState(() => _jobType = value!),
                                   ),

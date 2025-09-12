@@ -7,7 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
-import '../../widgets/common/styles.dart'; 
+import '../../widgets/common/styles.dart';
+
 class EmployerProfilePage extends StatefulWidget {
   const EmployerProfilePage({super.key});
 
@@ -18,9 +19,12 @@ class EmployerProfilePage extends StatefulWidget {
 class _EmployerProfilePageState extends State<EmployerProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _companyNameController = TextEditingController();
-  final TextEditingController _companyDescriptionController = TextEditingController();
-  final TextEditingController _companyAddressController = TextEditingController();
-  final TextEditingController _companyWebsiteController = TextEditingController();
+  final TextEditingController _companyDescriptionController =
+      TextEditingController();
+  final TextEditingController _companyAddressController =
+      TextEditingController();
+  final TextEditingController _companyWebsiteController =
+      TextEditingController();
 
   String? _companyLogoUrl;
   bool _isLoading = false;
@@ -61,7 +65,10 @@ class _EmployerProfilePageState extends State<EmployerProfilePage> {
 
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
-    await FirebaseFirestore.instance.collection('companyProfiles').doc(uid).set({
+    await FirebaseFirestore.instance
+        .collection('companyProfiles')
+        .doc(uid)
+        .set({
       'companyName': _companyNameController.text.trim(),
       'companyDescription': _companyDescriptionController.text.trim(),
       'companyAddress': _companyAddressController.text.trim(),
@@ -96,7 +103,8 @@ class _EmployerProfilePageState extends State<EmployerProfilePage> {
     String cloudName = 'dztobyinv';
     String uploadPreset = 'profile_upload_preset';
 
-    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+    final uri =
+        Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = uploadPreset
@@ -128,7 +136,8 @@ class _EmployerProfilePageState extends State<EmployerProfilePage> {
             constraints: BoxConstraints(
               minHeight: MediaQuery.of(context).size.height * 0.8,
             ),
-            child: buildStyledCard( // ✅ using shared card styling
+            child: buildStyledCard(
+              // ✅ using shared card styling
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -138,11 +147,14 @@ class _EmployerProfilePageState extends State<EmployerProfilePage> {
                       child: CircleAvatar(
                         radius: 55,
                         backgroundColor: hexToColor("#4f4f4d"),
-                        backgroundImage: (_companyLogoUrl != null && _companyLogoUrl!.isNotEmpty)
+                        backgroundImage: (_companyLogoUrl != null &&
+                                _companyLogoUrl!.isNotEmpty)
                             ? NetworkImage(_companyLogoUrl!)
                             : null,
-                        child: (_companyLogoUrl == null || _companyLogoUrl!.isEmpty)
-                            ? const Icon(Icons.business, size: 50, color: Colors.white)
+                        child: (_companyLogoUrl == null ||
+                                _companyLogoUrl!.isEmpty)
+                            ? const Icon(Icons.business,
+                                size: 50, color: Colors.white)
                             : null,
                       ),
                     ),
@@ -154,7 +166,9 @@ class _EmployerProfilePageState extends State<EmployerProfilePage> {
                         border: UnderlineInputBorder(),
                       ),
                       validator: (value) =>
-                          (value == null || value.trim().isEmpty) ? 'Please enter a company name' : null,
+                          (value == null || value.trim().isEmpty)
+                              ? 'Please enter a company name'
+                              : null,
                     ),
                     const SizedBox(height: 10.0),
                     TextFormField(

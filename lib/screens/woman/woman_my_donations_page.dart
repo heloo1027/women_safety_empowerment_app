@@ -242,6 +242,100 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
     );
   }
 
+  Future<void> _showReviewDialog(
+    BuildContext context, {
+    required String ngoId,
+    required String donationId,
+    required String ngoName,
+    DocumentSnapshot? existingReview,
+  }) async {
+    int rating = existingReview?.get('rating') ?? 0;
+    final reviewController = TextEditingController(
+      text: existingReview?.get('comment') ?? '',
+    );
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              title: Text(
+                "Review for $ngoName",
+                style: kTitleTextStyle,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ⭐ Star rating row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return Expanded(
+                        child: IconButton(
+                          icon: Icon(
+                            index < rating ? Icons.star : Icons.star_border,
+                            color: Colors.amber,
+                          ),
+                          onPressed: () {
+                            setState(() => rating = index + 1);
+                          },
+                        ),
+                      );
+                    }),
+                  ),
+                  Flexible(
+                    child: TextField(
+                      controller: reviewController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                          labelText: " Write your review here"),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (rating < 1 || rating > 5) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Please provide a rating.")),
+                      );
+                      return;
+                    }
+
+                    final reviewData = {
+                      'ngoId': ngoId,
+                      'donationId': donationId,
+                      'womanId': _auth.currentUser!.uid,
+                      'rating': rating,
+                      'comment': reviewController.text.trim(),
+                      'createdAt': FieldValue.serverTimestamp(),
+                    };
+
+                    if (existingReview == null) {
+                      await _firestore.collection('ngoReviews').add(reviewData);
+                    } else {
+                      await existingReview.reference.update(reviewData);
+                    }
+
+                    Navigator.pop(ctx);
+                  },
+                  child: Text(existingReview == null ? "Submit" : "Update"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -372,6 +466,52 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
                                   child: const Text("Chat"),
                                 ),
                                 const SizedBox(width: 8),
+                                // 🔹 Review button (only if Completed)
+                                if (status == "Completed")
+                                  StreamBuilder<QuerySnapshot>(
+                                    stream: _firestore
+                                        .collection('ngoReviews')
+                                        .where('ngoId', isEqualTo: req['ngoId'])
+                                        .where('donationId',
+                                            isEqualTo: req['donationId'])
+                                        .where('womanId',
+                                            isEqualTo: _auth.currentUser!.uid)
+                                        .limit(1)
+                                        .snapshots(),
+                                    builder: (context, reviewSnapshot) {
+                                      if (reviewSnapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const SizedBox.shrink();
+                                      }
+
+                                      final hasReview = reviewSnapshot
+                                              .hasData &&
+                                          reviewSnapshot.data!.docs.isNotEmpty;
+                                      final reviewDoc = hasReview
+                                          ? reviewSnapshot.data!.docs.first
+                                          : null;
+
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 8.0),
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            _showReviewDialog(
+                                              context,
+                                              ngoId: req['ngoId'],
+                                              donationId: req[
+                                                  'donationId'], // 🔹 tie to donationId
+                                              ngoName: ngoName,
+                                              existingReview: reviewDoc,
+                                            );
+                                          },
+                                          child: Text(hasReview
+                                              ? "Edit Review"
+                                              : "Add Review"),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 if (status == "Pending")
                                   ElevatedButton(
                                     onPressed: () =>

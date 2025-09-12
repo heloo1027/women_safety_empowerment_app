@@ -120,13 +120,15 @@ class _PostJobPageState extends State<PostJobPage> {
                 final jobs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final title = (data['title'] ?? '').toString().toLowerCase();
-                  final location = (data['location'] ?? '').toString().toLowerCase();
-                  final status = (data['status'] ?? '').toString().toLowerCase();
+                  final location =
+                      (data['location'] ?? '').toString().toLowerCase();
+                  final status =
+                      (data['status'] ?? '').toString().toLowerCase();
                   final type = (data['type'] ?? '').toString().toLowerCase();
 
                   return title.contains(_searchQuery) ||
                       location.contains(_searchQuery) ||
-                      status.contains(_searchQuery)   ||
+                      status.contains(_searchQuery) ||
                       type.contains(_searchQuery);
                 }).toList();
 

@@ -7,7 +7,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Securely
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/auth_wrapper.dart';
 import 'package:women_safety_empowerment_app/authentication/forgot_password.dart';
@@ -72,48 +71,50 @@ class _LoginScreenState extends State<LoginScreen> {
   // }
 
   Future<void> _signIn() async {
-  if (_formKey.currentState?.validate() ?? false) {
-    try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+    if (_formKey.currentState?.validate() ?? false) {
+      try {
+        UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
 
-      User? user = userCredential.user; // Retrieves signed-in user
+        User? user = userCredential.user; // Retrieves signed-in user
 
-      if (user != null) {
-        // Save user ID and email securely in device storage
-        await _secureStorage.write(key: 'userID', value: user.uid);
-        await _secureStorage.write(key: 'userEmail', value: user.email!);
+        if (user != null) {
+          // Save user ID and email securely in device storage
+          await _secureStorage.write(key: 'userID', value: user.uid);
+          await _secureStorage.write(key: 'userEmail', value: user.email!);
 
-        // Retrieve and save FCM token
-        FirebaseMessaging messaging = FirebaseMessaging.instance;
-        String? token = await messaging.getToken();
+          // Retrieve and save FCM token
+          FirebaseMessaging messaging = FirebaseMessaging.instance;
+          String? token = await messaging.getToken();
 
-        if (token != null) {
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-            'fcmToken': token,
-          });
-          print('FCM Token saved after login: $token');
+          if (token != null) {
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .update({
+              'fcmToken': token,
+            });
+            print('FCM Token saved after login: $token');
+          }
+
+          if (mounted) {
+            // Navigate to AuthWrapper after successful login
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AuthWrapper()),
+            );
+          }
         }
-
-        if (mounted) {
-          // Navigate to AuthWrapper after successful login
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AuthWrapper()),
-          );
-        }
+      } on FirebaseAuthException catch (e) {
+        _showErrorDialog(e.message ?? 'Login failed');
+      } catch (e) {
+        _showErrorDialog('An error occurred. Please try again.');
+        print('Login error: $e');
       }
-    } on FirebaseAuthException catch (e) {
-      _showErrorDialog(e.message ?? 'Login failed');
-    } catch (e) {
-      _showErrorDialog('An error occurred. Please try again.');
-      print('Login error: $e');
     }
   }
-}
-
 
   // Shows a pop-up alert dialog displaying login errors
   void _showErrorDialog(String message) {

@@ -5,7 +5,6 @@ import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 
-
 /// Common page padding
 const EdgeInsets kPagePadding = EdgeInsets.all(16.0);
 
@@ -53,8 +52,10 @@ Widget bigGreyButton({
         backgroundColor: backgroundColor,
         padding: padding,
         // Add custom disabled styles
-        disabledBackgroundColor: backgroundColor.withOpacity(0.7), // slightly faded
-        disabledForegroundColor: textColor.withOpacity(0.9), // keep text readable
+        disabledBackgroundColor:
+            backgroundColor.withOpacity(0.7), // slightly faded
+        disabledForegroundColor:
+            textColor.withOpacity(0.9), // keep text readable
       ),
       child: Text(
         label,
@@ -69,7 +70,6 @@ Widget bigGreyButton({
     ),
   );
 }
-
 
 /// Builds a styled BottomNavigationBar
 BottomNavigationBar buildStyledBottomNav({
@@ -225,7 +225,6 @@ Widget buildSearchBar({
   );
 }
 
-
 /// Reusable section header
 Widget buildSectionTitle(String text) {
   return Text(
@@ -237,7 +236,6 @@ Widget buildSectionTitle(String text) {
     ),
   );
 }
-
 
 /// Info row with optional icon
 Widget buildInfoRow({
@@ -265,7 +263,6 @@ Widget buildInfoRow({
   );
 }
 
-
 /// Reusable styled chip
 Widget buildStyledChip(String label) {
   return Chip(
@@ -283,9 +280,12 @@ Widget buildStyledChip(String label) {
 /// Reusable vertical spacer
 Widget vSpace(double height) => SizedBox(height: height);
 
-
 /// Reusable White Card
-Widget buildWhiteCard({required Widget child, EdgeInsetsGeometry? padding, EdgeInsetsGeometry? margin,}) {
+Widget buildWhiteCard({
+  required Widget child,
+  EdgeInsetsGeometry? padding,
+  EdgeInsetsGeometry? margin,
+}) {
   return Card(
     elevation: 3,
     shape: RoundedRectangleBorder(

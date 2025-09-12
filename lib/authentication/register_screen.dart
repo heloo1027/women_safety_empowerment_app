@@ -244,7 +244,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController(); // 👈 Name controller
+  final TextEditingController _nameController =
+      TextEditingController(); // 👈 Name controller
 
   String _selectedRole = 'Woman';
   bool _obscurePassword = true;
@@ -366,7 +367,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -393,8 +393,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (value) =>
-                      value == null || value.isEmpty ? 'Please enter your name' : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Please enter your name'
+                      : null,
                 ),
                 SizedBox(height: 2.h),
 
@@ -405,7 +406,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
-                    } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                    } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                        .hasMatch(value)) {
                       return 'Please enter a valid email';
                     }
                     return null;
@@ -476,4 +478,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

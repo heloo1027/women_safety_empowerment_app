@@ -159,7 +159,8 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                       .delete();
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Donation request is deleted")),
+                    const SnackBar(
+                        content: Text("Donation request is deleted")),
                   );
                 },
                 child: const Text("Delete"),

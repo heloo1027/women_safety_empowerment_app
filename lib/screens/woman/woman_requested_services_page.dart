@@ -312,7 +312,8 @@ class _WomanRequestedServicesPageState
                                             MaterialPageRoute(
                                               builder: (_) => WomanChatPage(
                                                 receiverId: req['providerId'],
-                                                receiverName: req['providerName'],
+                                                receiverName:
+                                                    req['providerName'],
                                               ),
                                             ),
                                           );
@@ -320,7 +321,8 @@ class _WomanRequestedServicesPageState
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             const SnackBar(
-                                              content: Text("Provider not available for chat."),
+                                              content: Text(
+                                                  "Provider not available for chat."),
                                             ),
                                           );
                                         }
@@ -350,6 +352,54 @@ class _WomanRequestedServicesPageState
                                                   req['serviceId'],
                                                   req['requestId'],
                                                 ),
+                                      ),
+
+                                    // Delete button if status == pending
+                                    if (req['status'] == "pending")
+                                      TextButton.icon(
+                                        icon: Icon(Icons.delete,
+                                            color: Colors.red),
+                                        label: const Text("Delete",
+                                            style:
+                                                TextStyle(color: Colors.red)),
+                                        onPressed: () async {
+                                          final confirm =
+                                              await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title:
+                                                  const Text("Confirm Delete"),
+                                              content: const Text(
+                                                  "Are you sure you want to delete this request?"),
+                                              actions: [
+                                                TextButton(
+                                                  child: const Text("Cancel"),
+                                                  onPressed: () =>
+                                                      Navigator.pop(ctx, false),
+                                                ),
+                                                TextButton(
+                                                  child: const Text("Delete"),
+                                                  onPressed: () =>
+                                                      Navigator.pop(ctx, true),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+
+                                          if (confirm == true) {
+                                            await FirebaseFirestore.instance
+                                                .collection('serviceRequests')
+                                                .doc(req['requestId'])
+                                                .delete();
+
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      "Request deleted successfully.")),
+                                            );
+                                          }
+                                        },
                                       ),
                                   ],
                                 )

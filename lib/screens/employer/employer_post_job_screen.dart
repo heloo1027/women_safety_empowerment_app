@@ -87,9 +87,7 @@ class _PostJobFormPageState extends State<PostJobFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: buildStyledAppBar(
-        title: 'Post a Job'
-      ),
+      appBar: buildStyledAppBar(title: 'Post a Job'),
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(

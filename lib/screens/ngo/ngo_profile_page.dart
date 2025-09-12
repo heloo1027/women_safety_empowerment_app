@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 
-import '../../widgets/common/styles.dart'; 
+import '../../widgets/common/styles.dart';
 
 class NGOProfileScreen extends StatefulWidget {
   const NGOProfileScreen({super.key});
@@ -50,10 +50,10 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
           _nameController.text = data['name'] ?? '';
           _phoneController.text = data['phone'] ?? '';
           _descriptionController.text = data['description'] ?? '';
-          _profileImageUrl =
-              (data['profileImage'] != null && data['profileImage'].toString().isNotEmpty)
-                  ? data['profileImage']
-                  : null;
+          _profileImageUrl = (data['profileImage'] != null &&
+                  data['profileImage'].toString().isNotEmpty)
+              ? data['profileImage']
+              : null;
         });
       }
     } catch (e) {
@@ -102,7 +102,10 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     try {
       String? imageUrl = await _uploadImageToCloudinary(File(pickedFile.path));
       if (imageUrl != null) {
-        await FirebaseFirestore.instance.collection("ngoProfiles").doc(uid).set({
+        await FirebaseFirestore.instance
+            .collection("ngoProfiles")
+            .doc(uid)
+            .set({
           'profileImage': imageUrl,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
@@ -127,7 +130,8 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     String cloudName = 'dztobyinv';
     String uploadPreset = 'profile_upload_preset';
 
-    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+    final uri =
+        Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = uploadPreset
@@ -160,13 +164,13 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     }
 
     return SingleChildScrollView(
-      padding: kPagePadding, 
+      padding: kPagePadding,
       child: Center(
         child: Container(
           constraints: BoxConstraints(
             minHeight: MediaQuery.of(context).size.height * 0.8,
           ),
-          child: buildStyledCard( 
+          child: buildStyledCard(
             child: Form(
               key: _formKey,
               child: Column(
@@ -180,7 +184,8 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
                           ? NetworkImage(_profileImageUrl!)
                           : null,
                       child: (_profileImageUrl == null)
-                          ? const Icon(Icons.person, size: 50, color: Colors.white)
+                          ? const Icon(Icons.person,
+                              size: 50, color: Colors.white)
                           : null,
                     ),
                   ),

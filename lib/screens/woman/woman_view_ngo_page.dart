@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_my_donations.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_my_donations_page.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'woman_view_ngo_details_page.dart';

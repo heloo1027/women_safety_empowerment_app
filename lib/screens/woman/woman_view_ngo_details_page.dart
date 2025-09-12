@@ -121,83 +121,85 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
   }
 
 // For "Need Our Help"
-Future<void> _submitNGOHelpRequest(List<DocumentSnapshot> completedReqs) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+  Future<void> _submitNGOHelpRequest(
+      List<DocumentSnapshot> completedReqs) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  if (_helpCategory == null || _helpItem == null) {
+    if (_helpCategory == null || _helpItem == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select category and item")),
+      );
+      return;
+    }
+
+    final qty = int.tryParse(_helpQuantityController.text.trim());
+    if (qty == null || qty <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter valid quantity")),
+      );
+      return;
+    }
+
+    // Find the completed NGO request
+    DocumentSnapshot? req;
+    try {
+      req = completedReqs.firstWhere(
+        (d) => d['item'] == _helpItem && d['category'] == _helpCategory,
+      );
+    } catch (e) {
+      req = null;
+    }
+
+    if (req == null) return;
+
+    final reqRef =
+        FirebaseFirestore.instance.collection('contributions').doc(req.id);
+
+    // Fetch latest snapshot to ensure we have up-to-date availableQuantity
+    final freshData = await reqRef.get();
+    final reqData = freshData.data() as Map<String, dynamic>;
+
+    // If availableQuantity doesn't exist, initialize it to quantity
+    int availableQty = reqData['availableQuantity'] ?? reqData['quantity'] ?? 0;
+    if (!reqData.containsKey('availableQuantity')) {
+      await reqRef.update({'availableQuantity': availableQty});
+    }
+
+    if (qty > availableQty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("You can request up to $availableQty items only."),
+        ),
+      );
+      return;
+    }
+
+    // Save request under NGO's contributions (subcollection)
+    await reqRef.collection('requestsFromWomen').add({
+      'womanId': user.uid,
+      // 'womanName': user.displayName,
+      'quantity': qty,
+      'description': _helpDescriptionController.text.trim(),
+      'status': 'Pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    // Decrement availableQuantity
+    // await reqRef.update({'availableQuantity': FieldValue.increment(-qty)});
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please select category and item")),
+      const SnackBar(content: Text("Request submitted, awaiting NGO approval")),
     );
-    return;
+
+    // Reset form
+    _helpQuantityController.clear();
+    _helpDescriptionController.clear();
+    setState(() {
+      _helpCategory = null;
+      _helpItem = null;
+    });
   }
-
-  final qty = int.tryParse(_helpQuantityController.text.trim());
-  if (qty == null || qty <= 0) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please enter valid quantity")),
-    );
-    return;
-  }
-
-  // Find the completed NGO request
-  DocumentSnapshot? req;
-  try {
-    req = completedReqs.firstWhere(
-      (d) => d['item'] == _helpItem && d['category'] == _helpCategory,
-    );
-  } catch (e) {
-    req = null;
-  }
-
-  if (req == null) return;
-
-  final reqRef = FirebaseFirestore.instance.collection('contributions').doc(req.id);
-
-  // Fetch latest snapshot to ensure we have up-to-date availableQuantity
-  final freshData = await reqRef.get();
-  final reqData = freshData.data() as Map<String, dynamic>;
-
-  // If availableQuantity doesn't exist, initialize it to quantity
-  int availableQty = reqData['availableQuantity'] ?? reqData['quantity'] ?? 0;
-  if (!reqData.containsKey('availableQuantity')) {
-    await reqRef.update({'availableQuantity': availableQty});
-  }
-
-  if (qty > availableQty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("You can request up to $availableQty items only."),
-      ),
-    );
-    return;
-  }
-
-  // Save request under NGO's contributions (subcollection)
-  await reqRef.collection('requestsFromWomen').add({
-    'womanId': user.uid,
-    // 'womanName': user.displayName,
-    'quantity': qty,
-    'description': _helpDescriptionController.text.trim(),
-    'status': 'Pending',
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-
-  // Decrement availableQuantity
-  // await reqRef.update({'availableQuantity': FieldValue.increment(-qty)});
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Request submitted, awaiting NGO approval")),
-  );
-
-  // Reset form
-  _helpQuantityController.clear();
-  _helpDescriptionController.clear();
-  setState(() {
-    _helpCategory = null;
-    _helpItem = null;
-  });
-}
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +243,8 @@ Future<void> _submitNGOHelpRequest(List<DocumentSnapshot> completedReqs) async {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    widget.name, style: kTitleTextStyle,
+                    widget.name,
+                    style: kTitleTextStyle,
                   ),
                 ),
               ],
@@ -265,8 +268,154 @@ Future<void> _submitNGOHelpRequest(List<DocumentSnapshot> completedReqs) async {
                 // const Icon(Icons.description, size: 20),
                 // const SizedBox(width: 8),
                 Expanded(
-                  child: Text(widget.description,
-                      style: const TextStyle(fontSize: 15), textAlign: TextAlign.justify,),
+                  child: Text(
+                    widget.description,
+                    style: const TextStyle(fontSize: 15),
+                    textAlign: TextAlign.justify,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Divider(
+              color: hexToColor('#4a6741'),
+              thickness: 1,
+            ),
+            // Reviews section
+            ExpansionTile(
+              tilePadding: EdgeInsets.only(left: 7.0),
+              title: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Reviews",
+                  style: kTitleTextStyle,
+                ),
+              ),
+              children: [
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('ngoReviews')
+                      .where('ngoId', isEqualTo: widget.ngoId)
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text("No reviews yet. Be the first to add one!"),
+                      );
+                    }
+
+                    final reviews = snapshot.data!.docs;
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: reviews.length,
+                      itemBuilder: (context, index) {
+                        final review =
+                            reviews[index].data() as Map<String, dynamic>;
+                        final womanId = review['womanId'] ?? '';
+
+                        return FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection('womanProfiles')
+                              .doc(womanId)
+                              .get(),
+                          builder: (context, profileSnap) {
+                            String reviewerName = "Anonymous";
+                            String? profileImage;
+
+                            if (profileSnap.hasData &&
+                                profileSnap.data!.exists) {
+                              final profileData = profileSnap.data!.data()
+                                  as Map<String, dynamic>;
+                              reviewerName = profileData['name'] ?? "Anonymous";
+                              profileImage = profileData['profileImage'];
+                            }
+
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 24,
+                                    backgroundImage: profileImage != null
+                                        ? NetworkImage(profileImage)
+                                        : null,
+                                    child: profileImage == null
+                                        ? const Icon(Icons.person)
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                reviewerName,
+                                                style:
+                                                    kSubtitleTextStyle.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            if (review['rating'] != null)
+                                              Row(
+                                                children: List.generate(
+                                                  5,
+                                                  (starIndex) => Icon(
+                                                    starIndex <
+                                                            (review['rating'] ??
+                                                                0)
+                                                        ? Icons.star
+                                                        : Icons.star_border,
+                                                    color: Colors.amber,
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          review['comment'] ?? '',
+                                          // style: kSubtitleTextStyle,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        if (review['createdAt'] != null)
+                                          Text(
+                                            (review['createdAt'] as Timestamp)
+                                                .toDate()
+                                                .toLocal()
+                                                .toString()
+                                                .split(' ')[0],
+                                            style: kSmallTextStyle,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
                 ),
               ],
             ),
@@ -280,7 +429,7 @@ Future<void> _submitNGOHelpRequest(List<DocumentSnapshot> completedReqs) async {
             Padding(
               padding:
                   const EdgeInsets.only(left: 7.0), // 👈 adjust value as needed
-              child:  Text(
+              child: Text(
                 "Donate to us",
                 style: kTitleTextStyle,
               ),
@@ -289,7 +438,7 @@ Future<void> _submitNGOHelpRequest(List<DocumentSnapshot> completedReqs) async {
             Padding(
               padding: const EdgeInsets.only(left: 8.0, bottom: 4),
               child: const Text(
-                "We are currently receiving donations for items below", 
+                "We are currently receiving donations for items below",
                 style: TextStyle(
                     fontSize: 11,
                     // fontStyle: FontStyle.italic,
@@ -314,7 +463,7 @@ Future<void> _submitNGOHelpRequest(List<DocumentSnapshot> completedReqs) async {
                 if (reqs.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.only(left: 8.0),
-                    child:  Text("This NGO currently has no open requests."),
+                    child: Text("This NGO currently has no open requests."),
                   );
                 }
 
@@ -452,7 +601,7 @@ Future<void> _submitNGOHelpRequest(List<DocumentSnapshot> completedReqs) async {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.only(left: 7.0),
-              child:  Text(
+              child: Text(
                 "Need Our Help",
                 style: kTitleTextStyle,
               ),

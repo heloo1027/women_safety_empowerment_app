@@ -151,42 +151,50 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
 
                               // Mark as Completed button (only if Pending)
                               if ((data['status'] ?? '') == 'Pending')
-  ElevatedButton.icon(
-    onPressed: () async {
-      final requestRef = _firestore
-          .collection('contributions')
-          .doc(widget.requestId);
-      final parentSnap = await requestRef.get();
-      final parentData = parentSnap.data() as Map<String, dynamic>;
-      final availableQty = (parentData['availableQuantity'] ?? 0);
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final requestRef = _firestore
+                                        .collection('contributions')
+                                        .doc(widget.requestId);
+                                    final parentSnap = await requestRef.get();
+                                    final parentData = parentSnap.data()
+                                        as Map<String, dynamic>;
+                                    final availableQty =
+                                        (parentData['availableQuantity'] ?? 0);
 
-      if ((data['quantity'] ?? 0) > availableQty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Quantity exceeds available quantity")),
-        );
-        return;
-      }
+                                    if ((data['quantity'] ?? 0) >
+                                        availableQty) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                "Quantity exceeds available quantity")),
+                                      );
+                                      return;
+                                    }
 
-      // Update donation status
-      await doc.reference.update({'status': 'Completed'});
+                                    // Update donation status
+                                    await doc.reference
+                                        .update({'status': 'Completed'});
 
-      // Update parent contribution's availableQuantity only
-      final newAvailable = availableQty - (data['quantity'] ?? 0);
-      await requestRef.update({
-        'availableQuantity': newAvailable,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+                                    // Update parent contribution's availableQuantity only
+                                    final newAvailable =
+                                        availableQty - (data['quantity'] ?? 0);
+                                    await requestRef.update({
+                                      'availableQuantity': newAvailable,
+                                      'updatedAt': FieldValue.serverTimestamp(),
+                                    });
 
-      setState(() {}); // refresh UI
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Request marked completed")),
-      );
-    },
-    icon: const Icon(Icons.check),
-    label: const Text("Mark as Completed"),
-  ),
-
+                                    setState(() {}); // refresh UI
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content:
+                                              Text("Request marked completed")),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.check),
+                                  label: const Text("Mark as Completed"),
+                                ),
                             ],
                           ),
                         ],
@@ -202,7 +210,6 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
     );
   }
 }
-
 
 // 🔹 custom chip builder
 Widget buildStatusChip(String status) {

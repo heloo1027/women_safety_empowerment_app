@@ -53,7 +53,8 @@ Future<void> sendMessageNotification({
     if (response.statusCode == 200) {
       print('✅ Chat notification sent');
     } else {
-      print('❌ Failed to send chat notification: ${response.statusCode} ${response.body}');
+      print(
+          '❌ Failed to send chat notification: ${response.statusCode} ${response.body}');
     }
 
     client.close();

@@ -127,7 +127,10 @@ class WomanServiceRequestsPage extends StatelessWidget {
                         ],
                       ),
                       trailing: IconButton(
-                        icon: Icon(Icons.chat, color:  Color(0xFF4a6741),),
+                        icon: Icon(
+                          Icons.chat,
+                          color: Color(0xFF4a6741),
+                        ),
                         onPressed: () =>
                             _openChat(context, requesterId, requesterName),
                       ),

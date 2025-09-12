@@ -24,30 +24,32 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
 
   // Function to sign out user and navigate to LoginScreen
   Future<void> _signOut(BuildContext context) async {
-  try {
-    User? user = FirebaseAuth.instance.currentUser;
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
 
-    if (user != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-        'fcmToken': FieldValue.delete(),
-      });
-    }
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
+          'fcmToken': FieldValue.delete(),
+        });
+      }
 
-    await FirebaseAuth.instance.signOut();
+      await FirebaseAuth.instance.signOut();
 
-    if (context.mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false, // Clear all previous routes
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false, // Clear all previous routes
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logout failed: $e')),
       );
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Logout failed: $e')),
-    );
   }
-}
-
 
 // List of pages for BottomNavigationBar
   static final List<Widget> _pages = <Widget>[
@@ -79,7 +81,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
     final userData =
         userSnap.exists ? userSnap.data() as Map<String, dynamic> : {};
 
-    // Fetch profile image from womanProfiles
+    // Fetch profile image from companyProfiles
     DocumentSnapshot profileSnap = await FirebaseFirestore.instance
         .collection('companyProfiles')
         .doc(uid)
@@ -92,7 +94,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
       'companyName': userData['companyName'] ?? 'No Name',
       'role': userData['role'] ?? 'No Role',
       'email': userData['email'] ?? '',
-      'profileImage': profileData['profileImage'] ?? '',
+      'companyLogo': profileData['companyLogo'] ?? '',
     };
   }
 
@@ -145,7 +147,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                   var data = snapshot.data!;
                   String email = data['email'] ?? 'No email';
                   String role = data['role'] ?? 'No Role';
-                  String imageUrl = data['profileImage'] ?? '';
+                  String imageUrl = data['companyLogo'] ?? '';
 
                   return DrawerHeader(
                     decoration: BoxDecoration(
@@ -235,7 +237,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
             // Chat option in drawer
             ListTile(
               leading: Icon(
-                Icons.home,
+                Icons.message,
                 color: _selectedIndex == 1
                     ? hexToColor("#4a6741") // active color
                     : Colors.grey, // inactive color

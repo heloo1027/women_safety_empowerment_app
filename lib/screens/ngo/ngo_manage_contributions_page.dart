@@ -10,47 +10,44 @@ class NGOManageContributionsPage extends StatelessWidget {
   const NGOManageContributionsPage({Key? key}) : super(key: key);
 
   Future<void> _markAsCompleted(String docId, Map<String, dynamic> data) async {
-  final firestore = FirebaseFirestore.instance;
+    final firestore = FirebaseFirestore.instance;
 
-  // 1. Mark woman's request as completed
-  await firestore.collection('contributions').doc(docId).update({
-    'status': 'Completed',
-    'completedAt': FieldValue.serverTimestamp(),
-  });
+    // 1. Mark woman's request as completed
+    await firestore.collection('contributions').doc(docId).update({
+      'status': 'Completed',
+      'completedAt': FieldValue.serverTimestamp(),
+    });
 
-  // 2. Update NGO request stock
-  final category = data['category'];
-  final item = data['item'];
-  final qty = data['quantity'] ?? 0;
-  final ngoId = data['ngoId'];
+    // 2. Update NGO request stock
+    final category = data['category'];
+    final item = data['item'];
+    final qty = data['quantity'] ?? 0;
+    final ngoId = data['ngoId'];
 
-  if (data['type'] == 'womanRequest') {
-    final snapshot = await firestore
-        .collection('contributions')
-        .where('ngoId', isEqualTo: ngoId)
-        .where('type', isEqualTo: 'ngoRequest') // ✅ ensure only NGO requests
-        .where('category', isEqualTo: category)
-        .where('item', isEqualTo: item)
-        .limit(1)
-        .get();
+    if (data['type'] == 'womanRequest') {
+      final snapshot = await firestore
+          .collection('contributions')
+          .where('ngoId', isEqualTo: ngoId)
+          .where('type', isEqualTo: 'ngoRequest') // ✅ ensure only NGO requests
+          .where('category', isEqualTo: category)
+          .where('item', isEqualTo: item)
+          .limit(1)
+          .get();
 
-    if (snapshot.docs.isNotEmpty) {
-      final docRef = snapshot.docs.first.reference;
-      final ngoData = snapshot.docs.first.data() as Map<String, dynamic>;
+      if (snapshot.docs.isNotEmpty) {
+        final docRef = snapshot.docs.first.reference;
+        final ngoData = snapshot.docs.first.data() as Map<String, dynamic>;
 
-      final fulfilled = (ngoData['fulfilledQuantity'] ?? 0) + qty;
-      final requiredQty = ngoData['quantity'] ?? 0;
+        final fulfilled = (ngoData['fulfilledQuantity'] ?? 0) + qty;
+        final requiredQty = ngoData['quantity'] ?? 0;
 
-      await docRef.update({
-        'fulfilledQuantity': fulfilled,
-        'status': fulfilled >= requiredQty ? 'Completed' : 'In Progress',
-      });
+        await docRef.update({
+          'fulfilledQuantity': fulfilled,
+          'status': fulfilled >= requiredQty ? 'Completed' : 'In Progress',
+        });
+      }
     }
   }
-}
-
-
-
 
   @override
   Widget build(BuildContext context) {

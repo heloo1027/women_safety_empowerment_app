@@ -146,7 +146,7 @@ class NotificationsPage extends StatelessWidget {
 
           const SizedBox(height: 4),
 
-        //  Timestamp
+          //  Timestamp
           Text(formattedTime, style: kSmallTextStyle),
         ]),
       ),

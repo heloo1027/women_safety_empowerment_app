@@ -9,7 +9,6 @@ const Color bubbleMeColor = Color(0xFFA3AB94);
 const Color bubbleOtherColor = Color(0xFFDDDDDD);
 const Color dateSeparatorColor = Colors.grey;
 
-
 // -------------------- Chat Input --------------------
 Widget buildChatInput({
   required TextEditingController controller,

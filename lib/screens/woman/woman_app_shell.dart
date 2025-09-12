@@ -9,7 +9,7 @@ import 'package:women_safety_empowerment_app/screens/woman/woman_chat_list_page.
 import 'package:women_safety_empowerment_app/screens/woman/woman_my_services_page.dart';
 // import 'package:women_safety_empowerment_app/screens/woman/woman_my_offer_service_page.dart';
 import 'package:women_safety_empowerment_app/screens/woman/woman_profile_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_job_screen.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_page.dart';
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
@@ -36,30 +36,33 @@ class _WomanAppShellState extends State<WomanAppShell> {
   //     MaterialPageRoute(builder: (context) => const LoginScreen()),
   //   );
   // }
-Future<void> _signOut(BuildContext context) async {
-  try {
-    User? user = FirebaseAuth.instance.currentUser;
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
 
-    if (user != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-        'fcmToken': FieldValue.delete(),
-      });
-    }
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
+          'fcmToken': FieldValue.delete(),
+        });
+      }
 
-    await FirebaseAuth.instance.signOut();
+      await FirebaseAuth.instance.signOut();
 
-    if (context.mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false, // Clear all previous routes
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false, // Clear all previous routes
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logout failed: $e')),
       );
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Logout failed: $e')),
-    );
   }
-}
 
   static final List<Widget> _pages = <Widget>[
     const WomanJobScreen(),

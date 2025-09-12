@@ -241,6 +241,47 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
                                     child: const Text("Chat"),
                                   ),
                                   const SizedBox(width: 8),
+                                  if (status == "Completed")
+                                    StreamBuilder<QuerySnapshot>(
+                                      stream: _firestore
+                                          .collection('ngoReviews')
+                                          .where('ngoId', isEqualTo: ngoId)
+                                          .where('requestId',
+                                              isEqualTo: data['requestId'])
+                                          .where('womanId',
+                                              isEqualTo: currentUser!.uid)
+                                          .limit(1)
+                                          .snapshots(), // 👈 live updates
+                                      builder: (context, reviewSnapshot) {
+                                        if (reviewSnapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return const SizedBox.shrink();
+                                        }
+
+                                        final hasReview =
+                                            reviewSnapshot.hasData &&
+                                                reviewSnapshot
+                                                    .data!.docs.isNotEmpty;
+                                        final reviewDoc = hasReview
+                                            ? reviewSnapshot.data!.docs.first
+                                            : null;
+
+                                        return ElevatedButton(
+                                          onPressed: () {
+                                            _showReviewDialog(
+                                              context,
+                                              ngoId: ngoId,
+                                              requestId: data['requestId'],
+                                              ngoName: ngoName,
+                                              existingReview: reviewDoc,
+                                            );
+                                          },
+                                          child: Text(hasReview
+                                              ? "Edit Review"
+                                              : "Add Review"),
+                                        );
+                                      },
+                                    ),
                                   if (status == "Pending")
                                     ElevatedButton(
                                       style: ElevatedButton.styleFrom(
@@ -407,6 +448,112 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
     );
   }
 
+  void _showReviewDialog(
+    BuildContext context, {
+    required String ngoId,
+    required String requestId,
+    required String ngoName,
+    DocumentSnapshot? existingReview,
+  }) {
+    final TextEditingController commentController = TextEditingController(
+      text: existingReview != null ? existingReview['comment'] ?? '' : '',
+    );
+    int rating = existingReview != null ? (existingReview['rating'] ?? 0) : 0;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(
+                "${existingReview != null ? "Edit" : "Add"} Review for $ngoName",
+                style: kTitleTextStyle,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return Expanded(
+                        child: IconButton(
+                          icon: Icon(
+                            index < rating ? Icons.star : Icons.star_border,
+                            color: Colors.amber,
+                          ),
+                          onPressed: () {
+                            setState(() => rating = index + 1);
+                          },
+                        ),
+                      );
+                    }),
+                  ),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: "Write your review here",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (rating == 0) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                            content: Text("Please provide a rating.")),
+                      );
+                      return;
+                    }
+
+                    if (existingReview != null) {
+                      // Update existing
+                      await existingReview.reference.update({
+                        'rating': rating,
+                        'comment': commentController.text.trim(),
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
+                    } else {
+                      // Add new
+                      await _firestore.collection('ngoReviews').add({
+                        'ngoId': ngoId,
+                        'womanId': currentUser!.uid,
+                        'requestId': requestId,
+                        'rating': rating,
+                        'comment': commentController.text.trim(),
+                        'createdAt': FieldValue.serverTimestamp(),
+                      });
+                    }
+
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text(existingReview != null
+                              ? "Review updated!"
+                              : "Review submitted!"),
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(existingReview != null ? "Update" : "Submit"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showEditQuantityDialog(
     BuildContext pageContext,
     String ngoId, {
@@ -422,7 +569,10 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
       context: pageContext,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text("Update Quantity", style: kTitleTextStyle,),
+          title: Text(
+            "Update Quantity",
+            style: kTitleTextStyle,
+          ),
           content: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
@@ -446,7 +596,8 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
                   if (dialogContext.mounted) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(
-                        content: Text("Invalid quantity. Max allowed: $availableQuantity"),
+                        content: Text(
+                            "Invalid quantity. Max allowed: $availableQuantity"),
                       ),
                     );
                   }

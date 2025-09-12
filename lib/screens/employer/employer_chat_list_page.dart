@@ -66,87 +66,94 @@ class EmployerChatListPage extends StatelessWidget {
                   String? profileImage;
 
                   if (userSnapshot.hasData && userSnapshot.data!.exists) {
-                    final data = userSnapshot.data!.data() as Map<String, dynamic>;
+                    final data =
+                        userSnapshot.data!.data() as Map<String, dynamic>;
                     applicantName = data['name'] ?? "Applicant";
                     profileImage = data['profileImage'];
                   }
 
                   return ListTile(
-  leading: CircleAvatar(
-    backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-        ? NetworkImage(profileImage)
-        : null,
-    child: (profileImage == null || profileImage.isEmpty)
-        ? Text(applicantName[0].toUpperCase())
-        : null,
-  ),
-  title: Text(applicantName),
-  subtitle: StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('chats')
-        .doc(chatId)
-        .collection('messages')
-        .orderBy('sentAt', descending: true)
-        .limit(1)
-        .snapshots(),
-    builder: (context, msgSnapshot) {
-      if (msgSnapshot.hasData && msgSnapshot.data!.docs.isNotEmpty) {
-        final lastMsg = msgSnapshot.data!.docs.first['message'] ?? "";
-        return Text(lastMsg,
-            maxLines: 1, overflow: TextOverflow.ellipsis);
-      }
-      return const Text("No messages yet");
-    },
-  ),
-  trailing: StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection("chats")
-        .doc(chatId)
-        .collection("messages")
-        .where("receiverId", isEqualTo: employerId) // msgs sent to employer
-        .where("isRead", isEqualTo: false)
-        .snapshots(),
-    builder: (context, unreadSnap) {
-      if (unreadSnap.hasData && unreadSnap.data!.docs.isNotEmpty) {
-        final count = unreadSnap.data!.docs.length;
-        return CircleAvatar(
-          radius: 12,
-          backgroundColor: hexToColor("#a3ab94"),
-          child: Text(
-            "$count",
-            style: const TextStyle(color: Colors.white, fontSize: 12),
-          ),
-        );
-      }
-      return const SizedBox.shrink();
-    },
-  ),
-  onTap: () async {
-    // ✅ Mark unread as read for employer
-    final unreadMessages = await FirebaseFirestore.instance
-        .collection("chats")
-        .doc(chatId)
-        .collection("messages")
-        .where("receiverId", isEqualTo: employerId)
-        .where("isRead", isEqualTo: false)
-        .get();
+                    leading: CircleAvatar(
+                      backgroundImage:
+                          (profileImage != null && profileImage.isNotEmpty)
+                              ? NetworkImage(profileImage)
+                              : null,
+                      child: (profileImage == null || profileImage.isEmpty)
+                          ? Text(applicantName[0].toUpperCase())
+                          : null,
+                    ),
+                    title: Text(applicantName),
+                    subtitle: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('chats')
+                          .doc(chatId)
+                          .collection('messages')
+                          .orderBy('sentAt', descending: true)
+                          .limit(1)
+                          .snapshots(),
+                      builder: (context, msgSnapshot) {
+                        if (msgSnapshot.hasData &&
+                            msgSnapshot.data!.docs.isNotEmpty) {
+                          final lastMsg =
+                              msgSnapshot.data!.docs.first['message'] ?? "";
+                          return Text(lastMsg,
+                              maxLines: 1, overflow: TextOverflow.ellipsis);
+                        }
+                        return const Text("No messages yet");
+                      },
+                    ),
+                    trailing: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection("chats")
+                          .doc(chatId)
+                          .collection("messages")
+                          .where("receiverId",
+                              isEqualTo: employerId) // msgs sent to employer
+                          .where("isRead", isEqualTo: false)
+                          .snapshots(),
+                      builder: (context, unreadSnap) {
+                        if (unreadSnap.hasData &&
+                            unreadSnap.data!.docs.isNotEmpty) {
+                          final count = unreadSnap.data!.docs.length;
+                          return CircleAvatar(
+                            radius: 12,
+                            backgroundColor: hexToColor("#a3ab94"),
+                            child: Text(
+                              "$count",
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 12),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    onTap: () async {
+                      // ✅ Mark unread as read for employer
+                      final unreadMessages = await FirebaseFirestore.instance
+                          .collection("chats")
+                          .doc(chatId)
+                          .collection("messages")
+                          .where("receiverId", isEqualTo: employerId)
+                          .where("isRead", isEqualTo: false)
+                          .get();
 
-    for (var msg in unreadMessages.docs) {
-      msg.reference.update({"isRead": true});
-    }
+                      for (var msg in unreadMessages.docs) {
+                        msg.reference.update({"isRead": true});
+                      }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EmployerChatPage(
-          applicantId: applicantId,
-          employerId: employerId, receiverName: applicantName,
-        ),
-      ),
-    );
-  },
-);
-
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EmployerChatPage(
+                            applicantId: applicantId,
+                            employerId: employerId,
+                            receiverName: applicantName,
+                          ),
+                        ),
+                      );
+                    },
+                  );
                 },
               );
             },

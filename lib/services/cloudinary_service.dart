@@ -8,7 +8,6 @@ Future<String?> uploadProfileImage() async {
   return _uploadImageToCloudinary('profile_upload_preset');
 }
 
-
 // Private helper function for uploading to Cloudinary
 Future<String?> _uploadImageToCloudinary(String uploadPreset) async {
   final picker = ImagePicker();
@@ -21,7 +20,8 @@ Future<String?> _uploadImageToCloudinary(String uploadPreset) async {
 
   String cloudName = 'dztobyinv'; // Your Cloudinary cloud name
 
-  final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+  final uri =
+      Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
 
   final request = http.MultipartRequest('POST', uri)
     ..fields['upload_preset'] = uploadPreset

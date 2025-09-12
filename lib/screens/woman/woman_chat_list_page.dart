@@ -159,7 +159,9 @@ class WomanChatListPage extends StatelessWidget {
                                 child: Text(
                                   "$count",
                                   style: const TextStyle(
-                                      color: Colors.white, fontSize: 12,),
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               );
                             }

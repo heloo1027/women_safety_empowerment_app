@@ -184,8 +184,9 @@ class _EmployerChatPageState extends State<EmployerChatPage> {
                   itemBuilder: (context, index) {
                     final msg = messages[index];
                     final isMe = msg['senderId'] == currentUser!.uid;
-                    final previousMsg =
-                        index + 1 < messages.length ? messages[index + 1] : null;
+                    final previousMsg = index + 1 < messages.length
+                        ? messages[index + 1]
+                        : null;
 
                     return buildMessageListItem(
                       msg: msg,

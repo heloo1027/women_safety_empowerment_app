@@ -137,77 +137,78 @@ class _SOSButtonState extends State<SOSButton> {
     return true;
   }
 
-Future<String?> _getEmergencyEmail(String uid) async {
-  DocumentSnapshot doc = await FirebaseFirestore.instance
-      .collection('womanProfiles')
-      .doc(uid)
-      .get();
+  Future<String?> _getEmergencyEmail(String uid) async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('womanProfiles')
+        .doc(uid)
+        .get();
 
-  if (!doc.exists) {
-    return null; // No profile document at all
+    if (!doc.exists) {
+      return null; // No profile document at all
+    }
+
+    // Safely read the field
+    var data = doc.data() as Map<String, dynamic>?;
+
+    if (data == null ||
+        data['emergencyEmail'] == null ||
+        data['emergencyEmail'].toString().trim().isEmpty) {
+      return null; // Field missing or empty string
+    }
+
+    return data['emergencyEmail'].toString();
   }
 
-  // Safely read the field
-  var data = doc.data() as Map<String, dynamic>?;
+  Future<Map<String, dynamic>?> _getEmergencyContact(String email) async {
+    QuerySnapshot query = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
 
-  if (data == null || data['emergencyEmail'] == null || data['emergencyEmail'].toString().trim().isEmpty) {
-    return null; // Field missing or empty string
+    if (query.docs.isNotEmpty) {
+      var doc = query.docs.first;
+      var data = doc.data() as Map<String, dynamic>;
+
+      return {
+        'userID': doc.id,
+        'fcmToken': data['fcmToken'], // may be null or empty
+      };
+    }
+    return null;
   }
 
-  return data['emergencyEmail'].toString();
-}
+  Future<void> _notifyEmergencyContact(
+      Map<String, dynamic> contactInfo, Position position) async {
+    String currentUid = FirebaseAuth.instance.currentUser!.uid;
 
+    // Prevent sending to yourself
+    if (contactInfo['userID'] == currentUid) {
+      _showSnack(
+          "Emergency email is linked to your own account. Please update it in Profile Page.");
+      return;
+    }
 
-Future<Map<String, dynamic>?> _getEmergencyContact(String email) async {
-  QuerySnapshot query = await FirebaseFirestore.instance
-      .collection('users')
-      .where('email', isEqualTo: email)
-      .get();
+    String notificationTitle = '🚨 SOS Alert: Your Friend Needs Help!';
+    String notificationBody =
+        'Your friend (${FirebaseAuth.instance.currentUser!.email}) is in an emergency at https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
 
-  if (query.docs.isNotEmpty) {
-    var doc = query.docs.first;
-    var data = doc.data() as Map<String, dynamic>;
+    // Always save in notifications
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'toUserID': contactInfo['userID'],
+      'title': notificationTitle,
+      'body': notificationBody,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
 
-    return {
-      'userID': doc.id,
-      'fcmToken': data['fcmToken'], // may be null or empty
-    };
+    // Send FCM only if token exists
+    if (contactInfo['fcmToken'] != null &&
+        contactInfo['fcmToken'].toString().isNotEmpty) {
+      await sendPushNotification(
+          contactInfo['fcmToken'], notificationTitle, notificationBody);
+    } else {
+      // _showSnack("Emergency contact is not logged in. Push notification not sent, but saved in Notifications.");
+    }
   }
-  return null;
-}
-
-Future<void> _notifyEmergencyContact(
-    Map<String, dynamic> contactInfo, Position position) async {
-  String currentUid = FirebaseAuth.instance.currentUser!.uid;
-
-  // Prevent sending to yourself
-  if (contactInfo['userID'] == currentUid) {
-    _showSnack("Emergency email is linked to your own account. Please update it in Profile Page.");
-    return;
-  }
-
-  String notificationTitle = '🚨 SOS Alert: Your Friend Needs Help!';
-  String notificationBody =
-      'Your friend (${FirebaseAuth.instance.currentUser!.email}) is in an emergency at https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
-
-  // Always save in notifications
-  await FirebaseFirestore.instance.collection('notifications').add({
-    'toUserID': contactInfo['userID'],
-    'title': notificationTitle,
-    'body': notificationBody,
-    'timestamp': FieldValue.serverTimestamp(),
-  });
-
-  // Send FCM only if token exists
-  if (contactInfo['fcmToken'] != null &&
-      contactInfo['fcmToken'].toString().isNotEmpty) {
-    await sendPushNotification(
-        contactInfo['fcmToken'], notificationTitle, notificationBody);
-  } else {
-    // _showSnack("Emergency contact is not logged in. Push notification not sent, but saved in Notifications.");
-  }
-}
-
 
   void _showSnack(String message) {
     ScaffoldMessenger.of(context)

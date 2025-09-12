@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_screen.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_job_applications_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_details_page.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
@@ -26,15 +27,31 @@ class _WomanJobScreenState extends State<WomanJobScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // 🔎 Reusable Search Bar
+          // Reusable Search Bar
           buildSearchBar(
             controller: _searchController,
-            hintText: "Search jobs...",
+            hintText: "Search by job title, type or location",
             onChanged: (query) {
               setState(() {
                 _searchQuery = query.toLowerCase();
               });
             },
+          ),
+
+          // View job applications button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6),
+            child: bigGreyButton(
+              label: "My Job Applications",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WomanJobApplicationsPage(),
+                  ),
+                );
+              },
+            ),
           ),
 
           // Job List

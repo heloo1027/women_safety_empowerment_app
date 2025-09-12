@@ -64,9 +64,10 @@ class NGOChatListPage extends StatelessWidget {
 
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                          ? NetworkImage(avatarUrl)
-                          : null,
+                      backgroundImage:
+                          (avatarUrl != null && avatarUrl.isNotEmpty)
+                              ? NetworkImage(avatarUrl)
+                              : null,
                       child: (avatarUrl == null || avatarUrl.isEmpty)
                           ? Text(displayName[0].toUpperCase())
                           : null,
@@ -120,7 +121,10 @@ class NGOChatListPage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => NGOChatPage(receiverId: otherUserId, receiverName: displayName,),
+                          builder: (_) => NGOChatPage(
+                            receiverId: otherUserId,
+                            receiverName: displayName,
+                          ),
                         ),
                       );
                     },
