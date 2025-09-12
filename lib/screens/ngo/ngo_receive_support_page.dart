@@ -68,177 +68,128 @@ class NGOReceiveSupportPage extends StatelessWidget {
                   final profileImage = womanData["profileImage"];
                   final currentStatus = reqData["status"] ?? "Pending";
 
-return Card(
-  margin: const EdgeInsets.all(8),
-  child: Padding(
-    padding: const EdgeInsets.all(12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Image and Name
-        Row(
-          children: [
-            CircleAvatar(
-              backgroundImage: profileImage != null ? NetworkImage(profileImage) : null,
-              child: profileImage == null ? const Icon(Icons.person) : null,
-            ),
-            const SizedBox(width: 12),
-            Text(womanName, style: kTitleTextStyle),
-          ],
-        ),
-        const SizedBox(height: 8),
+                  return Card(
+                    margin: const EdgeInsets.all(8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Image and Name
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundImage: profileImage != null
+                                    ? NetworkImage(profileImage)
+                                    : null,
+                                child: profileImage == null
+                                    ? const Icon(Icons.person)
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(womanName, style: kTitleTextStyle),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
 
-        // Category, Item, Quantity, Description
-        Text.rich(TextSpan(
-          children: [
-            const TextSpan(text: "Category: ", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextSpan(text: "${reqData["category"] ?? "-"}"),
-          ],
-        )),
-        Text.rich(TextSpan(
-          children: [
-            const TextSpan(text: "Item: ", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextSpan(text: "${reqData["item"] ?? "-"}"),
-          ],
-        )),
-        Text.rich(TextSpan(
-          children: [
-            const TextSpan(text: "Quantity: ", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextSpan(text: "${reqData["quantity"] ?? "-"}"),
-          ],
-        )),
-        Text.rich(TextSpan(
-          children: [
-            const TextSpan(text: "Description: ", style: TextStyle(fontWeight: FontWeight.bold)),
-            TextSpan(text: "${reqData["description"] ?? "-"}"),
-          ],
-        )),
+                          // Category, Item, Quantity, Description
+                          Text.rich(TextSpan(
+                            children: [
+                              const TextSpan(
+                                  text: "Category: ",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              TextSpan(text: "${reqData["category"] ?? "-"}"),
+                            ],
+                          )),
+                          Text.rich(TextSpan(
+                            children: [
+                              const TextSpan(
+                                  text: "Item: ",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              TextSpan(text: "${reqData["item"] ?? "-"}"),
+                            ],
+                          )),
+                          Text.rich(TextSpan(
+                            children: [
+                              const TextSpan(
+                                  text: "Quantity: ",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              TextSpan(text: "${reqData["quantity"] ?? "-"}"),
+                            ],
+                          )),
+                          Text.rich(TextSpan(
+                            children: [
+                              const TextSpan(
+                                  text: "Description: ",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              TextSpan(
+                                  text: "${reqData["description"] ?? "-"}"),
+                            ],
+                          )),
 
-        // Status dropdown
-        Row(
-          children: [
-            const Text("Status: ", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(width: 8),
-            Flexible(
-              child: DropdownButton<String>(
-                value: currentStatus,
-                isExpanded: true,
-                items: statusOptions
-                    .map((status) => DropdownMenuItem(
-                          value: status,
-                          child: Text(status),
-                        ))
-                    .toList(),
-                onChanged: (newStatus) async {
-                  if (newStatus != null) {
-                    await FirebaseFirestore.instance
-                        .collection('womanRequests')
-                        .doc(requestId)
-                        .update({"status": newStatus});
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
+                          // Status dropdown
+                          Row(
+                            children: [
+                              const Text("Status: ",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: DropdownButton<String>(
+                                  value: currentStatus,
+                                  isExpanded: true,
+                                  items: statusOptions
+                                      .map((status) => DropdownMenuItem(
+                                            value: status,
+                                            child: Text(status),
+                                          ))
+                                      .toList(),
+                                  onChanged: (newStatus) async {
+                                    if (newStatus != null) {
+                                      await FirebaseFirestore.instance
+                                          .collection('womanRequests')
+                                          .doc(requestId)
+                                          .update({"status": newStatus});
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
 
-        // Date and Chat button row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Requested on: ${((reqData["createdAt"] as Timestamp?)?.toDate() != null ? 
-                "${((reqData["createdAt"] as Timestamp).toDate().day).toString().padLeft(2,'0')}/${((reqData["createdAt"] as Timestamp).toDate().month).toString().padLeft(2,'0')}/${((reqData["createdAt"] as Timestamp).toDate().year.toString().substring(2))}" 
-                : "-")}",
-              style: kSmallTextStyle,
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => NGOChatPage(receiverId: womanId, receiverName: womanName),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.chat, size: 16),
-              label: const Text("Chat"),
-            ),
-          ],
-        ),
-      ],
-    ),
-  ),
-);
-
-                  // return Card(
-                  //   margin: const EdgeInsets.all(8),
-                  //   child: ListTile(
-                  //     leading: CircleAvatar(
-                  //       backgroundImage: profileImage != null
-                  //           ? NetworkImage(profileImage)
-                  //           : null,
-                  //       child: profileImage == null
-                  //           ? const Icon(Icons.person)
-                  //           : null,
-                  //     ),
-                  //     title: Text(womanName),
-                  //     subtitle: Column(
-                  //       crossAxisAlignment: CrossAxisAlignment.start,
-                  //       children: [
-                  //         Text("Category: ${reqData["category"] ?? "-"}"),
-                  //         Text("Item: ${reqData["item"] ?? "-"}"),
-                  //         Text("Quantity: ${reqData["quantity"] ?? "-"}"),
-                  //         Text("Description: ${reqData["description"] ?? "-"}"),
-                  //         const SizedBox(height: 6),
-                  //         Row(
-                  //           children: [
-                  //             const Text("Status: "),
-                  //             const SizedBox(width: 8),
-                  //             Flexible(
-                  //               child: DropdownButton<String>(
-                  //                 value: currentStatus,
-                  //                 isExpanded:
-                  //                     true, // makes it use available width
-                  //                 items: statusOptions
-                  //                     .map((status) => DropdownMenuItem(
-                  //                           value: status,
-                  //                           child: Text(status),
-                  //                         ))
-                  //                     .toList(),
-                  //                 onChanged: (newStatus) async {
-                  //                   if (newStatus != null) {
-                  //                     await FirebaseFirestore.instance
-                  //                         .collection('womanRequests')
-                  //                         .doc(requestId)
-                  //                         .update({"status": newStatus});
-                  //                   }
-                  //                 },
-                  //               ),
-                  //             ),
-                  //           ],
-                  //         ),
-                  //         Text(
-                  //           "Created: ${(reqData["createdAt"] as Timestamp?)?.toDate().toString() ?? "-"}",
-                  //           style: const TextStyle(
-                  //               fontSize: 12, color: Colors.grey),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //     trailing: IconButton(
-                  //       icon: const Icon(Icons.chat),
-                  //       onPressed: () {
-                  //         Navigator.push(
-                  //           context,
-                  //           MaterialPageRoute(
-                  //             builder: (_) => NGOChatPage(receiverId: womanId),
-                  //           ),
-                  //         );
-                  //       },
-                  //     ),
-                  //   ),
-                  // );
+                          // Date and Chat button row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Requested on: ${((reqData["createdAt"] as Timestamp?)?.toDate() != null ? "${((reqData["createdAt"] as Timestamp).toDate().day).toString().padLeft(2, '0')}/${((reqData["createdAt"] as Timestamp).toDate().month).toString().padLeft(2, '0')}/${((reqData["createdAt"] as Timestamp).toDate().year.toString().substring(2))}" : "-")}",
+                                style: kSmallTextStyle,
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => NGOChatPage(
+                                          receiverId: womanId,
+                                          receiverName: womanName),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.chat, size: 16),
+                                label: const Text("Chat"),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 },
               );
             },

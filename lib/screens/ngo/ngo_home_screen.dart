@@ -10,8 +10,8 @@ import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 import 'ngo_chat_list_page.dart';
-import 'ngo_manage_contributions_page.dart';
-import 'ngo_receive_support_page.dart';
+// import 'ngo_manage_contributions_page.dart';
+// import 'ngo_receive_support_page.dart';
 import 'ngo_request_donation_page.dart';
 
 class NGOHomeScreen extends StatefulWidget {
@@ -23,7 +23,7 @@ class NGOHomeScreen extends StatefulWidget {
 
 // Main home screen for NGO user
 class _NGOHomeScreenState extends State<NGOHomeScreen> {
-  int _selectedIndex = 0; // Index for BottomNavigationBar and Drawer highlight
+  int _selectedIndex = 1; // Index for BottomNavigationBar and Drawer highlight
   Widget? _currentPage; // Allows showing drawer-only pages
 
   // Function to sign out user and navigate to LoginScreen
@@ -58,7 +58,7 @@ Future<void> _signOut(BuildContext context) async {
     const NGOChatListPage(),
     const NGORequestDonationPage(),
     // const NGOManageContributionsPage(),
-    const NGOReceiveSupportPage(),
+    // const NGOReceiveSupportPage(),
     const NGOProfileScreen(),
   ];
 
@@ -67,7 +67,7 @@ Future<void> _signOut(BuildContext context) async {
     'Chat',
     'Request Donation',
     // 'Manage Contributions',
-    'Receive Support',
+    // 'Receive Support',
     'Profile',
   ];
 
@@ -118,11 +118,12 @@ Future<void> _signOut(BuildContext context) async {
       appBar: AppBar(
         // Displays Top App Bar title based on current selected index
         title: Text(
-          _currentPage != null
-              ? (_currentPage is NGOManageContributionsPage
-                  ? "Contributions"
-                  : "")
-              : _titles[_selectedIndex],
+          // _currentPage != null
+          //     ? (_currentPage is NGOManageContributionsPage
+          //         ? "Contributions"
+          //         : "")
+              // : 
+              _titles[_selectedIndex],
           style: GoogleFonts.openSans(
             fontWeight: FontWeight.bold,
             fontSize: 18.sp,
@@ -294,41 +295,67 @@ Future<void> _signOut(BuildContext context) async {
             ),
 
             // Manage Contributions option in drawer
-            ListTile(
-              leading: Icon(
-                Icons.volunteer_activism,
-                color: _currentPage is NGOManageContributionsPage
-                    ? hexToColor("#4a6741")
-                    : Colors.grey,
-                size: 24,
-              ),
-              title: Text(
-                'Contributions',
-                style: GoogleFonts.openSans(
-                  fontSize: 16,
-                  fontWeight: _currentPage is NGOManageContributionsPage
-                      ? FontWeight.bold
-                      : FontWeight.w600,
-                  color: _currentPage is NGOManageContributionsPage
-                      ? hexToColor("#4a6741")
-                      : Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _openDrawerPage(const NGOManageContributionsPage());
-              },
-            ),
+            // ListTile(
+            //   leading: Icon(
+            //     Icons.volunteer_activism,
+            //     color: _currentPage is NGOManageContributionsPage
+            //         ? hexToColor("#4a6741")
+            //         : Colors.grey,
+            //     size: 24,
+            //   ),
+            //   title: Text(
+            //     'Contributions',
+            //     style: GoogleFonts.openSans(
+            //       fontSize: 16,
+            //       fontWeight: _currentPage is NGOManageContributionsPage
+            //           ? FontWeight.bold
+            //           : FontWeight.w600,
+            //       color: _currentPage is NGOManageContributionsPage
+            //           ? hexToColor("#4a6741")
+            //           : Colors.grey,
+            //     ),
+            //   ),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     _openDrawerPage(const NGOManageContributionsPage());
+            //   },
+            // ),
 
             // Receive Support option in drawer
+            // ListTile(
+            //   leading: Icon(
+            //     Icons.support_agent,
+            //     color:
+            //         _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
+            //   ),
+            //   title: Text(
+            //     'Support',
+            //     style: GoogleFonts.openSans(
+            //       fontSize: 16,
+            //       fontWeight:
+            //           _selectedIndex == 2 ? FontWeight.bold : FontWeight.w600,
+            //       color:
+            //           _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
+            //     ),
+            //   ),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     setState(() {
+            //       _selectedIndex = 2;
+            //       _currentPage = null;
+            //     });
+            //   },
+            // ),
+
+            // Profile option in drawer
             ListTile(
               leading: Icon(
-                Icons.support_agent,
+                Icons.person,
                 color:
                     _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
               ),
               title: Text(
-                'Support',
+                'Profile',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight:
@@ -341,32 +368,6 @@ Future<void> _signOut(BuildContext context) async {
                 Navigator.pop(context);
                 setState(() {
                   _selectedIndex = 2;
-                  _currentPage = null;
-                });
-              },
-            ),
-
-            // Profile option in drawer
-            ListTile(
-              leading: Icon(
-                Icons.person,
-                color:
-                    _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
-              ),
-              title: Text(
-                'Profile',
-                style: GoogleFonts.openSans(
-                  fontSize: 16,
-                  fontWeight:
-                      _selectedIndex == 3 ? FontWeight.bold : FontWeight.w600,
-                  color:
-                      _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() {
-                  _selectedIndex = 3;
                   _currentPage = null;
                 });
               },
@@ -441,8 +442,7 @@ Future<void> _signOut(BuildContext context) async {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
           BottomNavigationBarItem(icon: Icon(Icons.feedback), label: 'Request'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.support_agent), label: 'Support'),
+          // BottomNavigationBarItem(icon: Icon(Icons.support_agent), label: 'Support'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
