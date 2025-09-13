@@ -243,23 +243,23 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
   }
 
   Future<void> _showReviewDialog(
-    BuildContext context, {
-    required String ngoId,
-    required String donationId,
-    required String ngoName,
-    DocumentSnapshot? existingReview,
-  }) async {
-    int rating = existingReview?.get('rating') ?? 0;
-    final reviewController = TextEditingController(
-      text: existingReview?.get('comment') ?? '',
-    );
+  BuildContext context, {
+  required String ngoId,
+  required String donationId,
+  required String ngoName,
+  DocumentSnapshot? existingReview,
+}) async {
+  int rating = existingReview?.get('rating') ?? 0;
+  final reviewController = TextEditingController(
+    text: existingReview?.get('comment') ?? '',
+  );
 
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setState) {
-            return AlertDialog(
+  await showDialog(
+    context: context,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx, setState) {
+          return AlertDialog(
               title: Text(
                 "Review for $ngoName",
                 style: kTitleTextStyle,
@@ -295,46 +295,57 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text("Cancel"),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    if (rating < 1 || rating > 5) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Please provide a rating.")),
-                      );
-                      return;
-                    }
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () async {
+                  if (rating < 1 || rating > 5) {
+                    // Use the dialog's context (ctx) to show a snackbar within the dialog
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                          content: Text("Please provide a rating.")),
+                    );
+                    return;
+                  }
 
-                    final reviewData = {
-                      'ngoId': ngoId,
-                      'donationId': donationId,
-                      'womanId': _auth.currentUser!.uid,
-                      'rating': rating,
-                      'comment': reviewController.text.trim(),
-                      'createdAt': FieldValue.serverTimestamp(),
-                    };
+                  final reviewData = {
+                    'ngoId': ngoId,
+                    'donationId': donationId,
+                    'womanId': _auth.currentUser!.uid,
+                    'rating': rating,
+                    'comment': reviewController.text.trim(),
+                    'createdAt': FieldValue.serverTimestamp(),
+                  };
 
-                    if (existingReview == null) {
-                      await _firestore.collection('ngoReviews').add(reviewData);
-                    } else {
-                      await existingReview.reference.update(reviewData);
-                    }
+                  String snackBarMessage = "Review submitted successfully!";
 
-                    Navigator.pop(ctx);
-                  },
-                  child: Text(existingReview == null ? "Submit" : "Update"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+                  if (existingReview == null) {
+                    await _firestore.collection('ngoReviews').add(reviewData);
+                  } else {
+                    await existingReview.reference.update(reviewData);
+                    snackBarMessage = "Review updated successfully!";
+                  }
+
+                  Navigator.pop(ctx); // Close the dialog first
+
+                  // ✅ Use the outer context to show the snackbar on the main screen
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(snackBarMessage),
+                    ),
+                  );
+                },
+                child: Text(existingReview == null ? "Submit" : "Update"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {

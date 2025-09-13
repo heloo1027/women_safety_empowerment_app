@@ -35,7 +35,7 @@ class _WomanJobApplicationsPageState extends State<WomanJobApplicationsPage> {
             padding: const EdgeInsets.all(12.0),
             child: TextField(
               decoration: InputDecoration(
-                hintText: "Search by title or status...",
+                hintText: "Search by job title or status",
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),

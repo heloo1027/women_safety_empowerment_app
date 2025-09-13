@@ -19,9 +19,6 @@ class EmployerChatListPage extends StatelessWidget {
     final employerId = currentUser.uid;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Conversations"),
-      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection("chats")

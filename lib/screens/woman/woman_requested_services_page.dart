@@ -368,7 +368,7 @@ class _WomanRequestedServicesPageState
                                             context: context,
                                             builder: (ctx) => AlertDialog(
                                               title:
-                                                  const Text("Confirm Delete"),
+                                                  Text("Confirm Delete", style: kTitleTextStyle,),
                                               content: const Text(
                                                   "Are you sure you want to delete this request?"),
                                               actions: [

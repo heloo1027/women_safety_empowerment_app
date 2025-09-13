@@ -157,7 +157,7 @@ class _PostJobFormPageState extends State<PostJobFormPage> {
                               keyboardType: TextInputType.number,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Enter salary';
+                                  return 'Please enter salary';
                                 }
                                 return null;
                               },
@@ -173,7 +173,7 @@ class _PostJobFormPageState extends State<PostJobFormPage> {
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Enter location';
+                                  return 'Please enter location';
                                 }
                                 return null;
                               },

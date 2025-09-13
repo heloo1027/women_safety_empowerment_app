@@ -11,6 +11,8 @@ import 'package:women_safety_empowerment_app/screens/woman/notifications_screen.
 import 'package:women_safety_empowerment_app/services/flutter_local_notification.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 // Background handler (needed for Android)
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -63,7 +65,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  // final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -72,7 +74,8 @@ class _MyAppState extends State<MyApp> {
     // 🔹 Handle notification when app is opened from a terminated state
     FirebaseMessaging.instance.getInitialMessage().then((message) {
       if (message != null) {
-        _navigatorKey.currentState?.push(
+        // Use the global navigatorKey
+        navigatorKey.currentState?.push(
           MaterialPageRoute(builder: (_) => const NotificationsPage()),
         );
       }
@@ -80,7 +83,8 @@ class _MyAppState extends State<MyApp> {
 
     // 🔹 Handle notification when app is in background & opened
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      _navigatorKey.currentState?.push(
+      // Use the global navigatorKey
+        navigatorKey.currentState?.push(
         MaterialPageRoute(builder: (_) => const NotificationsPage()),
       );
     });
@@ -91,8 +95,8 @@ class _MyAppState extends State<MyApp> {
     return Sizer(
       builder: (context, orientation, deviceType) {
         return MaterialApp(
-          navigatorKey:
-              _navigatorKey, // ✅ Needed to navigate outside of context
+          // ✅ Use the global navigatorKey here
+          navigatorKey: navigatorKey, 
           debugShowCheckedModeBanner: false,
           title: 'Sisters',
           theme: ThemeData(

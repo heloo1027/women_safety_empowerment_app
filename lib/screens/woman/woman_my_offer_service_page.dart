@@ -130,7 +130,7 @@ class _WomanMyManageServicePageState extends State<WomanMyManageServicePage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Delete Service"),
+        title: Text("Delete Service", style: kTitleTextStyle,),
         content: const Text("Are you sure you want to delete this service?"),
         actions: [
           TextButton(
