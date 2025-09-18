@@ -3,39 +3,27 @@ import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
 import 'package:flutter/material.dart'; // Flutter UI framework
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
-import 'package:women_safety_empowerment_app/screens/woman/woman_view_services_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_chat_list_page.dart';
-// import 'package:women_safety_empowerment_app/screens/woman/woman_chat_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_my_services_page.dart';
-// import 'package:women_safety_empowerment_app/screens/woman/woman_my_offer_service_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_profile_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_page.dart';
 
+import 'ngo_chat_list_page.dart';
+import 'ngo_request_donation_page.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_sos_page.dart';
+import 'package:women_safety_empowerment_app/screens/ngo/ngo_profile_page.dart';
 import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
-//import 'package:women_safety_empowerment_app/widgets/common/user_profile_card.dart';
-import 'package:women_safety_empowerment_app/screens/woman/notifications_screen.dart';
 
-import 'woman_view_ngo_page.dart';
 
-class WomanAppShell extends StatefulWidget {
-  const WomanAppShell({super.key});
+class NGOHomeScreen extends StatefulWidget {
+  const NGOHomeScreen({super.key});
 
   @override
-  State<WomanAppShell> createState() => _WomanAppShellState();
+  State<NGOHomeScreen> createState() => _NGOHomeScreenState();
 }
 
-class _WomanAppShellState extends State<WomanAppShell> {
-  int _selectedIndex = 0; // Index for BottomNavigationBar and Drawer highlight
+// Main home screen for NGO user
+class _NGOHomeScreenState extends State<NGOHomeScreen> {
+  int _selectedIndex = 1; // Index for BottomNavigationBar and Drawer highlight
 
-  // void _signOut(BuildContext context) async {
-  //   await FirebaseAuth.instance.signOut();
-  //   Navigator.of(context).pushReplacement(
-  //     MaterialPageRoute(builder: (context) => const LoginScreen()),
-  //   );
-  // }
+  // Function to sign out user and navigate to LoginScreen
   Future<void> _signOut(BuildContext context) async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
@@ -64,44 +52,46 @@ class _WomanAppShellState extends State<WomanAppShell> {
     }
   }
 
-  static final List<Widget> _pages = <Widget>[
-    const WomanJobScreen(),
-    const WomanChatListPage(),
-    const SOSButton(), // Show SOS button page
-    const WomanProfileScreen(),
+  // List of pages for BottomNavigationBar
+  final List<Widget> _pages = <Widget>[
+    const NGOChatListPage(),
+    const NGORequestDonationPage(),
+    const NGOProfileScreen(),
   ];
 
-  static final List<String> _titles = <String>[
-    'Job',
+  // List of titles for app bar
+  final List<String> _titles = <String>[
     'Chat',
-    'SOS',
+    'Request Donation',
     'Profile',
   ];
 
+  // Function to update BottomNavigationBar index
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+// clear drawer-only page
     });
   }
 
+  // Fetch user data from Firestore for the Drawer header
   Future<Map<String, dynamic>?> _fetchUserData() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
-    // Fetch user data (name, role, email)
+    // Fetch basic user info
     DocumentSnapshot userSnap =
         await FirebaseFirestore.instance.collection('users').doc(uid).get();
     final userData =
         userSnap.exists ? userSnap.data() as Map<String, dynamic> : {};
 
-    // Fetch profile image from womanProfiles
+    // Fetch NGO profile info (image, details)
     DocumentSnapshot profileSnap = await FirebaseFirestore.instance
-        .collection('womanProfiles')
+        .collection('ngoProfiles')
         .doc(uid)
         .get();
     final profileData =
         profileSnap.exists ? profileSnap.data() as Map<String, dynamic> : {};
 
-    // Merge data
     return {
       'name': userData['name'] ?? 'No Name',
       'role': userData['role'] ?? 'No Role',
@@ -114,6 +104,7 @@ class _WomanAppShellState extends State<WomanAppShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // Displays Top App Bar title based on current selected index
         title: Text(
           _titles[_selectedIndex],
           style: GoogleFonts.openSans(
@@ -123,18 +114,20 @@ class _WomanAppShellState extends State<WomanAppShell> {
           ),
         ),
         backgroundColor: hexToColor("#dddddd"),
-        iconTheme: IconThemeData(
-          color: hexToColor("#4a6741"),
-        ),
+        iconTheme: IconThemeData(color: hexToColor("#4a6741")),
       ),
+
+      // Side drawer with user info and logout
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
+            // Uses FutureBuilder to load user info from Firestore
             FutureBuilder<Map<String, dynamic>?>(
               future: _fetchUserData(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
+                  // Show loading indicator while fetching data
                   return DrawerHeader(
                     decoration: BoxDecoration(
                       color: hexToColor("#dddddd"),
@@ -144,6 +137,7 @@ class _WomanAppShellState extends State<WomanAppShell> {
                     ),
                   );
                 } else if (snapshot.hasError || !snapshot.hasData) {
+                  // Show error message if fetch fails
                   return DrawerHeader(
                     decoration: BoxDecoration(
                       color: hexToColor("#dddddd"),
@@ -156,8 +150,9 @@ class _WomanAppShellState extends State<WomanAppShell> {
                     ),
                   );
                 } else {
+                  // Display user info in drawer header
                   var data = snapshot.data!;
-                  String email = data['email'] ?? 'No email';
+                  String name = data['email'] ?? 'No Email';
                   String role = data['role'] ?? 'No Role';
                   String imageUrl = data['profileImage'] ?? '';
 
@@ -168,6 +163,7 @@ class _WomanAppShellState extends State<WomanAppShell> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // Profile image with circle border
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -188,16 +184,20 @@ class _WomanAppShellState extends State<WomanAppShell> {
                                 : null,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 2), // between image and name
+                        // Display user name
                         Text(
-                          email,
+                          name,
                           style: GoogleFonts.openSans(
                             color: hexToColor("#4a6741"),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(
+                            height: 2 // spacing between name and role
+                            ),
+                        // Display user role inside rounded container
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8.0, vertical: 4.0),
@@ -219,67 +219,26 @@ class _WomanAppShellState extends State<WomanAppShell> {
                 }
               },
             ),
+
+            // Home option in drawer
             ListTile(
               leading: Icon(
-                Icons.home_repair_service,
-                color: Colors.grey,
+                Icons.chat,
+                color: _selectedIndex == 0
+                    ? hexToColor("#4a6741") // active color
+                    : Colors.grey, // inactive color
                 size: 24,
               ),
               title: Text(
-                'All Services',
+                'Chat',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const WomanViewServicesPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.home_repair_service,
-                color: Colors.grey,
-                size: 24,
-              ),
-              title: Text(
-                'Offer Services',
-                style: GoogleFonts.openSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const WomanMyServicesPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.work,
-                color:
-                    _selectedIndex == 0 ? hexToColor("#4a6741") : Colors.grey,
-                size: 24,
-              ),
-              title: Text(
-                'Job',
-                style: GoogleFonts.openSans(
-                  fontSize: 16,
-                  fontWeight:
-                      _selectedIndex == 0 ? FontWeight.bold : FontWeight.w600,
-                  color:
-                      _selectedIndex == 0 ? hexToColor("#4a6741") : Colors.grey,
+                  fontWeight: _selectedIndex == 0
+                      ? FontWeight.bold // bold if selected
+                      : FontWeight.w600, // normal weight if not
+                  color: _selectedIndex == 0
+                      ? hexToColor("#4a6741") // active color
+                      : Colors.grey, // inactive color
                 ),
               ),
               onTap: () {
@@ -289,15 +248,17 @@ class _WomanAppShellState extends State<WomanAppShell> {
                 });
               },
             ),
+
+            // Request option in drawer
             ListTile(
               leading: Icon(
-                Icons.message,
+                Icons.feedback,
                 color:
                     _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'Chat',
+                'Request',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight:
@@ -313,15 +274,16 @@ class _WomanAppShellState extends State<WomanAppShell> {
                 });
               },
             ),
+
+            // Profile option in drawer
             ListTile(
               leading: Icon(
-                Icons.report,
+                Icons.person,
                 color:
                     _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
-                size: 24,
               ),
               title: Text(
-                'SOS',
+                'Profile',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight:
@@ -337,78 +299,10 @@ class _WomanAppShellState extends State<WomanAppShell> {
                 });
               },
             ),
+
+            // Logout option in drawer
             ListTile(
               leading: Icon(
-                Icons.person,
-                color:
-                    _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
-                size: 24,
-              ),
-              title: Text(
-                'Profile',
-                style: GoogleFonts.openSans(
-                  fontSize: 16,
-                  fontWeight:
-                      _selectedIndex == 3 ? FontWeight.bold : FontWeight.w600,
-                  color:
-                      _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() {
-                  _selectedIndex = 3;
-                });
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.notifications,
-                color: Colors.grey,
-                size: 24,
-              ),
-              title: Text(
-                'Notifications',
-                style: GoogleFonts.openSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotificationsPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.group,
-                color: Colors.grey,
-                size: 24,
-              ),
-              title: Text(
-                'NGO',
-                style: GoogleFonts.openSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const WomanViewNGOPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(
                 Icons.logout,
                 color: Colors.grey,
                 size: 24,
@@ -426,14 +320,13 @@ class _WomanAppShellState extends State<WomanAppShell> {
           ],
         ),
       ),
-      body: _pages[_selectedIndex],
       bottomNavigationBar: buildStyledBottomNav(
-        currentIndex: _selectedIndex,
+        currentIndex:
+            _selectedIndex >= 0 ? _selectedIndex : null, // null = no highlight
         onTap: _onItemTapped,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Job'),
-          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'SOS'),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
+          BottomNavigationBarItem(icon: Icon(Icons.feedback), label: 'Request'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

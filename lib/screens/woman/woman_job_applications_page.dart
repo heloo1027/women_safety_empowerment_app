@@ -1,10 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_details_page.dart';
-import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_details_page.dart';
+
+// Page to display jobs that the current Woman user has applied for
 class WomanJobApplicationsPage extends StatefulWidget {
   const WomanJobApplicationsPage({super.key});
 
@@ -14,12 +16,13 @@ class WomanJobApplicationsPage extends StatefulWidget {
 }
 
 class _WomanJobApplicationsPageState extends State<WomanJobApplicationsPage> {
-  String searchQuery = "";
+  String searchQuery = ""; // Stores current search input
 
   @override
   Widget build(BuildContext context) {
     final userId = FirebaseAuth.instance.currentUser?.uid;
 
+    // Handle case where user is not logged in
     if (userId == null) {
       return const Scaffold(
         body: Center(child: Text("User not logged in")),
@@ -30,7 +33,7 @@ class _WomanJobApplicationsPageState extends State<WomanJobApplicationsPage> {
       appBar: buildStyledAppBar(title: "My Job Applications"),
       body: Column(
         children: [
-          // 🔍 Search Bar
+          //  Search Bar
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
@@ -43,13 +46,13 @@ class _WomanJobApplicationsPageState extends State<WomanJobApplicationsPage> {
               ),
               onChanged: (value) {
                 setState(() {
-                  searchQuery = value.toLowerCase();
+                  searchQuery = value.toLowerCase(); // Update search query
                 });
               },
             ),
           ),
 
-          // 🔹 Jobs List
+          //  Jobs List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance.collection('jobs').snapshots(),
@@ -72,6 +75,7 @@ class _WomanJobApplicationsPageState extends State<WomanJobApplicationsPage> {
                   children: jobDocs.map((jobDoc) {
                     final jobData = jobDoc.data() as Map<String, dynamic>;
 
+                    // For each job, check if current user has applied
                     return StreamBuilder<QuerySnapshot>(
                       stream: jobDoc.reference
                           .collection('applications')
@@ -92,7 +96,7 @@ class _WomanJobApplicationsPageState extends State<WomanJobApplicationsPage> {
                         final jobStatus =
                             (appData['status'] ?? "").toString().toLowerCase();
 
-                        // 🔎 Apply search filter
+                        //  Apply search filter
                         if (searchQuery.isNotEmpty &&
                             !jobTitle.contains(searchQuery) &&
                             !jobStatus.contains(searchQuery)) {
@@ -101,6 +105,7 @@ class _WomanJobApplicationsPageState extends State<WomanJobApplicationsPage> {
 
                         return GestureDetector(
                           onTap: () {
+                            // Navigate to job details page
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -207,7 +212,7 @@ class _WomanJobApplicationsPageState extends State<WomanJobApplicationsPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ⭐ Star rating
+              //  Star rating
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(5, (index) {

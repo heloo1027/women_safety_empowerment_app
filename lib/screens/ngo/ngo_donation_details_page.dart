@@ -1,11 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:women_safety_empowerment_app/screens/ngo/ngo_chat_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
-import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/screens/ngo/ngo_chat_page.dart';
+
+// Page to display donation details for a specific contribution request
 class DonationDetailsPage extends StatelessWidget {
-  final String requestId;
+  final String requestId; // ID of the contribution request
   const DonationDetailsPage({Key? key, required this.requestId})
       : super(key: key);
 
@@ -13,6 +15,7 @@ class DonationDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: buildStyledAppBar(title: ("Donation Details")),
+      // StreamBuilder listens in real-time to donations under this contribution
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('contributions')
@@ -25,25 +28,31 @@ class DonationDetailsPage extends StatelessWidget {
 
           final docs = snapshot.data!.docs;
 
+          // Display message if no donations exist yet
           if (docs.isEmpty) {
             return const Center(child: Text("No donors yet"));
           }
 
+          // ListView to display each donor
           return ListView.builder(
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final donorData = docs[index].data() as Map<String, dynamic>;
               final donorId = donorData['womanId'];
 
+              // FutureBuilder to fetch donor's profile info
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
                     .collection('womanProfiles')
                     .doc(donorId)
                     .get(),
                 builder: (context, userSnap) {
+                  // Show spinner while loading profile
                   if (userSnap.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
+
+                  // Show placeholder if donor profile does not exist
                   if (!userSnap.hasData || !userSnap.data!.exists) {
                     return const Text("Donor: Unknown");
                   }
@@ -52,6 +61,7 @@ class DonationDetailsPage extends StatelessWidget {
                       userSnap.data!.data() as Map<String, dynamic>?;
                   final donorName = donorProfile?['name'] ?? "Unknown";
 
+                  // Card to display donation info
                   return Card(
                       margin: const EdgeInsets.all(12),
                       child: Padding(
@@ -59,6 +69,7 @@ class DonationDetailsPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Row 1: Donor Name and Status Chip
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -69,13 +80,14 @@ class DonationDetailsPage extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 4),
-
                             const SizedBox(height: 4),
+
                             // Row 2: Quantity
                             Text("Quantity: ${donorData['quantity']}",
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
+
                             // Row 3: Description (if any)
                             if (donorData['description'] != null &&
                                 donorData['description'].toString().isNotEmpty)
@@ -84,6 +96,7 @@ class DonationDetailsPage extends StatelessWidget {
                                 child: Text(donorData['description']),
                               ),
                             const SizedBox(height: 8),
+
                             // Row 4: Chat + Mark Complete buttons
                             Wrap(
                               spacing: 8,
@@ -110,6 +123,7 @@ class DonationDetailsPage extends StatelessWidget {
                                 // Only show Reject & Complete if donor is Pending AND contribution is not Completed
                                 if (donorData['status'] == 'Pending')
                                   FutureBuilder<DocumentSnapshot>(
+                                    // Get parent contribution to check if it is already completed
                                     future: FirebaseFirestore.instance
                                         .collection('contributions')
                                         .doc(requestId)
@@ -124,6 +138,7 @@ class DonationDetailsPage extends StatelessWidget {
                                       final parentStatus =
                                           parentData['status'] ?? 'In Progress';
 
+                                      // Hide buttons if parent contribution is completed
                                       if (parentStatus == 'Completed') {
                                         return const SizedBox
                                             .shrink(); // hide buttons
@@ -132,6 +147,7 @@ class DonationDetailsPage extends StatelessWidget {
                                       return Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          // Reject donation button
                                           ElevatedButton.icon(
                                             onPressed: () async {
                                               final donationRef =
@@ -152,12 +168,12 @@ class DonationDetailsPage extends StatelessWidget {
                                                         "Donation rejected")),
                                               );
                                             },
-                                            // style: ElevatedButton.styleFrom(
-                                            //     backgroundColor: Colors.red),
                                             icon: const Icon(Icons.close),
                                             label: const Text("Reject"),
                                           ),
                                           const SizedBox(width: 8),
+
+                                          // Mark donation as completed button
                                           ElevatedButton.icon(
                                             onPressed: () async {
                                               final parentRef =
@@ -252,28 +268,24 @@ class DonationDetailsPage extends StatelessWidget {
   }
 }
 
-// 🔹 custom chip builder
+// Helper function to create colored status chips for donation status
 Widget buildStatusChip(String status) {
   Color color;
   switch (status) {
     case "Completed":
       color = hexToColor("#a3ab94");
-      // textColor = Colors.green.shade800;
       break;
     case "Rejected":
       color = hexToColor("#fdaaaa");
-      // textColor = Colors.red.shade800;
       break;
     default:
       color = hexToColor("#e5ba9f");
-    // textColor = Colors.grey.shade800;
   }
 
   return Chip(
     label: Text(
       status,
       style: TextStyle(
-        // color: textColor,
         fontWeight: FontWeight.bold,
       ),
     ),

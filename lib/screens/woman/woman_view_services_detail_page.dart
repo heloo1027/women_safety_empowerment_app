@@ -1,9 +1,11 @@
 // This page is to view service detail that are offered by other users
 // User can request for service here
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class WomanViewServicesDetailPage extends StatelessWidget {

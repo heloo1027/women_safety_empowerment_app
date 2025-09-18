@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'woman_chat_page.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'woman_chat_page.dart';
 
 class WomanViewNGODetailsPage extends StatefulWidget {
   final String ngoId;
@@ -65,7 +66,7 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
       return;
     }
 
-    // ✅ find existing NGO request
+    //  find existing NGO request
     DocumentSnapshot? req;
     try {
       req = reqs.firstWhere(
@@ -81,7 +82,7 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
       final totalQty = reqData['quantity'] ?? 0;
       final fulfilledQty = reqData['fulfilledQuantity'] ?? 0;
 
-      // ✅ Check if donation would exceed target
+      //  Check if donation would exceed target
       if (fulfilledQty + qty > totalQty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -178,15 +179,12 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
     // Save request under NGO's contributions (subcollection)
     await reqRef.collection('requestsFromWomen').add({
       'womanId': user.uid,
-      // 'womanName': user.displayName,
       'quantity': qty,
       'description': _helpDescriptionController.text.trim(),
       'status': 'Pending',
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    // Decrement availableQuantity
-    // await reqRef.update({'availableQuantity': FieldValue.increment(-qty)});
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Request submitted, awaiting NGO approval")),
@@ -265,8 +263,6 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // const Icon(Icons.description, size: 20),
-                // const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     widget.description,
@@ -428,7 +424,7 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
             // Donation Requests title
             Padding(
               padding:
-                  const EdgeInsets.only(left: 7.0), // 👈 adjust value as needed
+                  const EdgeInsets.only(left: 7.0), //  adjust value as needed
               child: Text(
                 "Donate to us",
                 style: kTitleTextStyle,
@@ -466,11 +462,6 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
                     child: Text("This NGO currently has no open requests."),
                   );
                 }
-
-                // final categories =
-                //     reqs.map((d) => d['category'] as String).toSet().toList();
-                // final items =
-                //     reqs.map((d) => d['item'] as String).toSet().toList();
 
                 final categories =
                     reqs.map((d) => d['category'] as String).toSet().toList();
@@ -530,7 +521,7 @@ class _WomanViewNGODetailsPageState extends State<WomanViewNGODetailsPage> {
                             setState(() {
                               _donateCategory = val;
                               _donateItem =
-                                  null; // 👈 reset item when category changes
+                                  null; //  reset item when category changes
                             });
                           },
                         ),

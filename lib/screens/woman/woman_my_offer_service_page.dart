@@ -1,8 +1,8 @@
 // This page is to offer a new service or edit/delete existing services
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class WomanMyManageServicePage extends StatefulWidget {
@@ -116,7 +116,7 @@ class _WomanMyManageServicePageState extends State<WomanMyManageServicePage> {
         );
       }
 
-      Navigator.pop(context, true); // ✅ go back to previous page
+      Navigator.pop(context, true); //  go back to previous page
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
@@ -157,7 +157,7 @@ class _WomanMyManageServicePageState extends State<WomanMyManageServicePage> {
         const SnackBar(content: Text("Service deleted successfully!")),
       );
 
-      Navigator.pop(context, true); // ✅ return to services list
+      Navigator.pop(context, true); //  return to services list
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error deleting service: $e")),

@@ -1,8 +1,8 @@
+import 'package:sizer/sizer.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 
 /// Common page padding
@@ -84,10 +84,10 @@ BottomNavigationBar buildStyledBottomNav({
     elevation: 0,
     backgroundColor: const Color(0xFFDDDDDD),
     items: items,
-    currentIndex: noSelection ? 0 : currentIndex!, // must always be valid
+    currentIndex: noSelection ? 0 : currentIndex, // must always be valid
     selectedItemColor: noSelection
         ? Colors.grey
-        : const Color(0xFF4a6741), // 👈 disable highlight
+        : const Color(0xFF4a6741), // disable highlight
     unselectedItemColor: Colors.grey,
     onTap: onTap,
     selectedLabelStyle: GoogleFonts.openSans(
@@ -109,7 +109,7 @@ PreferredSizeWidget buildStyledAppBar({
   Color textColor = const Color(0xFF4a6741),
   double fontSize = 18,
   Widget? leading,
-  List<Widget>? actions, //  Add optional actions
+  List<Widget>? actions, // Add optional actions
 }) {
   return AppBar(
     title: Text(
@@ -123,7 +123,7 @@ PreferredSizeWidget buildStyledAppBar({
     backgroundColor: backgroundColor,
     iconTheme: IconThemeData(color: textColor),
     leading: leading,
-    actions: actions, // ✅ Use actions here
+    actions: actions, // Use actions here
   );
 }
 

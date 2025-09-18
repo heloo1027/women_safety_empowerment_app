@@ -1,10 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'package:women_safety_empowerment_app/services/send_message_notification.dart';
 import 'package:women_safety_empowerment_app/widgets/common/chat_page_styles.dart';
-import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
+// Page for a single chat conversation between an NGO and a woman
 class NGOChatPage extends StatefulWidget {
   final String receiverId; // Woman's userId
   final String receiverName; // Woman's name
@@ -24,6 +26,7 @@ class _NGOChatPageState extends State<NGOChatPage> {
   final ScrollController _scrollController = ScrollController();
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
+  // Compute a unique chat ID by combining the two user IDs in sorted order
   String get chatId {
     final ids = [currentUser!.uid, widget.receiverId]..sort();
     return ids.join("_");
@@ -32,55 +35,10 @@ class _NGOChatPageState extends State<NGOChatPage> {
   @override
   void initState() {
     super.initState();
-    _markAsRead();
+    _markAsRead(); // Mark any unread messages as read when opening the chat
   }
 
-  // void _markAsRead() async {
-  //   final unreadMessages = await FirebaseFirestore.instance
-  //       .collection("chats")
-  //       .doc(chatId)
-  //       .collection("messages")
-  //       .where("receiverId", isEqualTo: currentUser!.uid)
-  //       .where("isRead", isEqualTo: false)
-  //       .get();
-
-  //   for (var doc in unreadMessages.docs) {
-  //     doc.reference.update({"isRead": true});
-  //   }
-  // }
-
-  // Future<void> _sendMessage() async {
-  //   final text = _messageController.text.trim();
-  //   if (text.isEmpty) return;
-
-  //   final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatId);
-
-  //   await chatRef.collection('messages').add({
-  //     "senderId": currentUser!.uid,
-  //     "receiverId": widget.receiverId,
-  //     "message": text,
-  //     "sentAt": FieldValue.serverTimestamp(),
-  //     "isRead": false,
-  //   });
-
-  //   await chatRef.set({
-  //     "participants": [currentUser!.uid, widget.receiverId],
-  //     "lastMessage": text,
-  //     "lastMessageTime": FieldValue.serverTimestamp(),
-  //   }, SetOptions(merge: true));
-
-  //   _messageController.clear();
-
-  //   // Scroll to bottom
-  //   _scrollController.animateTo(
-  //     0,
-  //     duration: const Duration(milliseconds: 300),
-  //     curve: Curves.easeOut,
-  //   );
-
-  //   // TODO: Trigger notification to woman (FCM)
-  // }
-
+  // Marks all unread messages for this chat (where NGO is receiver) as read
   Future<void> _markAsRead() async {
     try {
       final unreadMessages = await FirebaseFirestore.instance
@@ -99,11 +57,12 @@ class _NGOChatPageState extends State<NGOChatPage> {
     }
   }
 
+  // Sends a message from NGO to woman
   Future<void> _sendMessage() async {
     final message = _messageController.text.trim();
     if (message.isEmpty) return;
 
-    _messageController.clear();
+    _messageController.clear(); // Clear input after sending
 
     try {
       final chatRef =
@@ -159,6 +118,7 @@ class _NGOChatPageState extends State<NGOChatPage> {
     }
   }
 
+  // Fetches the NGO's display name from Firestore
   Future<String> _getSenderName() async {
     String senderName = "NGO";
     final ngoDoc = await FirebaseFirestore.instance
@@ -174,6 +134,7 @@ class _NGOChatPageState extends State<NGOChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Show message if NGO is not logged in
     if (currentUser == null) {
       return const Scaffold(
         body: Center(child: Text("Not logged in")),
@@ -181,14 +142,13 @@ class _NGOChatPageState extends State<NGOChatPage> {
     }
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text("Chat with ${widget.receiverName}", style: kapp,),
-      // ),
+      // App bar shows woman's name
       appBar: buildStyledAppBar(
         title: widget.receiverName,
       ),
       body: Column(
         children: [
+          // Expanded chat messages list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -207,6 +167,7 @@ class _NGOChatPageState extends State<NGOChatPage> {
                   return const Center(child: Text("No messages yet."));
                 }
 
+                // ListView of messages (reverse = latest at bottom)
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,
@@ -218,6 +179,7 @@ class _NGOChatPageState extends State<NGOChatPage> {
                         : null;
                     final isMe = msg['senderId'] == currentUser!.uid;
 
+                    // Custom widget for each chat bubble
                     return buildMessageListItem(
                       msg: msg,
                       isMe: isMe,
@@ -229,7 +191,7 @@ class _NGOChatPageState extends State<NGOChatPage> {
             ),
           ),
 
-          // Chat input
+          // Chat input field and send button
           buildChatInput(
             controller: _messageController,
             onSend: _sendMessage,

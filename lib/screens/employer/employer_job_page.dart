@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:women_safety_empowerment_app/screens/employer/employer_edit_job_screen.dart';
-import 'package:women_safety_empowerment_app/screens/employer/employer_post_job_screen.dart';
-import 'package:women_safety_empowerment_app/screens/employer/employer_view_job_applications.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/screens/employer/employer_edit_job_page.dart';
+import 'package:women_safety_empowerment_app/screens/employer/employer_post_job_page.dart';
+import 'package:women_safety_empowerment_app/screens/employer/employer_view_job_applications_page.dart';
 
+// Stateful widget for managing and displaying employer's posted jobs
 class PostJobPage extends StatefulWidget {
   const PostJobPage({super.key});
 
@@ -16,9 +18,13 @@ class PostJobPage extends StatefulWidget {
 }
 
 class _PostJobPageState extends State<PostJobPage> {
+  // Controller for search input
   final TextEditingController _searchController = TextEditingController();
+
+  // Current search query for filtering jobs
   String _searchQuery = "";
 
+  // Helper function to show a SnackBar message
   void _showSnack(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -30,11 +36,12 @@ class _PostJobPageState extends State<PostJobPage> {
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
+      // Floating action button to post a new job
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           String uid = FirebaseAuth.instance.currentUser!.uid;
 
-          // 🔎 Check company profile before allowing post
+          // Check company profile before allowing post
           DocumentSnapshot companyDoc = await FirebaseFirestore.instance
               .collection('companyProfiles')
               .doc(uid)
@@ -48,6 +55,7 @@ class _PostJobPageState extends State<PostJobPage> {
 
           var data = companyDoc.data() as Map<String, dynamic>?;
 
+          // List of required company profile fields
           List<String> requiredFields = [
             'companyAddress',
             'companyDescription',
@@ -55,6 +63,7 @@ class _PostJobPageState extends State<PostJobPage> {
             'companyWebsite',
           ];
 
+          // Verify that all required fields are filled
           bool allFilled = requiredFields.every((field) =>
               data![field] != null && data[field].toString().trim().isNotEmpty);
 
@@ -64,6 +73,7 @@ class _PostJobPageState extends State<PostJobPage> {
             return;
           }
 
+          // Navigate to the job posting form
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const PostJobFormPage()),
@@ -72,9 +82,10 @@ class _PostJobPageState extends State<PostJobPage> {
         backgroundColor: hexToColor("#4f4f4d"),
         child: Icon(Icons.add, color: hexToColor("#dddddd")),
       ),
+
       body: Column(
         children: [
-          // 🔎 Add Search Bar at the top
+          // Search bar at the top to filter jobs by title, location, type, or status
           buildSearchBar(
             controller: _searchController,
             hintText: "Search jobs by title, location, type, status",
@@ -85,15 +96,17 @@ class _PostJobPageState extends State<PostJobPage> {
             },
           ),
 
-          // 🔎 Job List (filtered)
+          // Expanded widget to display the list of jobs
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
+              // Fetch jobs posted by the current employer, ordered by posted date
               stream: FirebaseFirestore.instance
                   .collection('jobs')
                   .where('employerID', isEqualTo: uid)
                   .orderBy('postedAt', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
+                // Show loading indicator while fetching data
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
                     child: CircularProgressIndicator(
@@ -102,6 +115,7 @@ class _PostJobPageState extends State<PostJobPage> {
                   );
                 }
 
+                // Show message if no jobs are posted
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
                     child: Text(
@@ -116,7 +130,7 @@ class _PostJobPageState extends State<PostJobPage> {
                   );
                 }
 
-                // 🔎 Apply filtering
+                // Apply filtering
                 final jobs = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final title = (data['title'] ?? '').toString().toLowerCase();
@@ -166,7 +180,7 @@ class _PostJobPageState extends State<PostJobPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 🔹 Row with Job Title & Edit Button
+                            // Row with Job Title & Edit Button
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -196,7 +210,7 @@ class _PostJobPageState extends State<PostJobPage> {
                             ),
                             const SizedBox(height: 6),
 
-                            // 🔹 Job type & status
+                            // Job type & status
                             Row(
                               children: [
                                 Container(
@@ -228,7 +242,7 @@ class _PostJobPageState extends State<PostJobPage> {
                             ),
                             const SizedBox(height: 12),
 
-                            // 🔹 Salary, location, description
+                            // Salary, location, description
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -328,7 +342,7 @@ class _PostJobPageState extends State<PostJobPage> {
 
                             const SizedBox(height: 12),
 
-                            // 🔹 Applications Button (below skills)
+                            // Applications Button (below skills)
                             TextButton.icon(
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.white,
@@ -350,7 +364,7 @@ class _PostJobPageState extends State<PostJobPage> {
                                         EmployerViewJobApplicationsPage(
                                       jobId: doc.id,
                                       employerId:
-                                          uid, // ✅ pass current employer id
+                                          uid, // pass current employer id
                                     ),
                                   ),
                                 );
@@ -359,7 +373,7 @@ class _PostJobPageState extends State<PostJobPage> {
 
                             const SizedBox(height: 8),
 
-                            // 🔹 Posted date
+                            // Posted date
                             if (postedDate.isNotEmpty)
                               Text(
                                 'Posted on: $postedDate',

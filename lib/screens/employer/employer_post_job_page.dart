@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
+// Stateful widget for the "Post Job" form page
 class PostJobFormPage extends StatefulWidget {
   const PostJobFormPage({super.key});
 
@@ -13,24 +15,32 @@ class PostJobFormPage extends StatefulWidget {
 }
 
 class _PostJobFormPageState extends State<PostJobFormPage> {
+  // Form key to validate the form fields
   final _formKey = GlobalKey<FormState>();
 
+  // Controllers for text input fields
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _salaryController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _skillController = TextEditingController();
 
+  // Default values for job type and status
   String _jobType = 'Full-time';
   String _jobStatus = 'Open';
 
+  // Loading state while posting job
   bool _isLoading = false;
 
+  // List of skills added by the user
   List<String> _selectedSkills = [];
 
+  // Function to post the job to Firestore
   Future<void> _postJob() async {
+    // Validate the form
     if (!_formKey.currentState!.validate()) return;
 
+    // Ensure at least one skill is added
     if (_selectedSkills.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add at least one required skill')),
@@ -38,13 +48,16 @@ class _PostJobFormPageState extends State<PostJobFormPage> {
       return;
     }
 
+    // Show loading indicator
     setState(() {
       _isLoading = true;
     });
 
+    // Get current user ID
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
     try {
+      // Add job data to Firestore
       await FirebaseFirestore.instance.collection('jobs').add({
         'employerID': uid,
         'title': _titleController.text.trim(),
@@ -57,23 +70,28 @@ class _PostJobFormPageState extends State<PostJobFormPage> {
         'postedAt': FieldValue.serverTimestamp(),
       });
 
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Job posted successfully')),
       );
 
+      // Go back to previous screen
       Navigator.pop(context);
     } catch (e) {
+      // Handle errors
       print('Error posting job: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to post job')),
       );
     }
 
+    // Hide loading indicator
     setState(() {
       _isLoading = false;
     });
   }
 
+  // Function to add a skill to the list
   void _addSkill() {
     String skill = _skillController.text.trim();
     if (skill.isNotEmpty && !_selectedSkills.contains(skill)) {
@@ -88,6 +106,7 @@ class _PostJobFormPageState extends State<PostJobFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: buildStyledAppBar(title: 'Post a Job'),
+      // Show loading indicator if posting job
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(

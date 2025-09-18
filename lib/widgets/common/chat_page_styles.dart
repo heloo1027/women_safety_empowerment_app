@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
-import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 // -------------------- Colors --------------------
 const Color bubbleMeColor = Color(0xFFA3AB94);

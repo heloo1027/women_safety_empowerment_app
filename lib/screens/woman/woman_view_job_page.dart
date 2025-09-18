@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_job_applications_page.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_details_page.dart';
+
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_job_applications_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_details_page.dart';
 
 class WomanJobScreen extends StatefulWidget {
   const WomanJobScreen({super.key});

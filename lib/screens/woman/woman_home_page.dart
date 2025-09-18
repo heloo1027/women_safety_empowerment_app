@@ -3,31 +3,37 @@ import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
 import 'package:flutter/material.dart'; // Flutter UI framework
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
-import 'package:women_safety_empowerment_app/screens/employer/employer_chat_list_page.dart';
 
+import 'woman_view_ngo_page.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
-import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
-import 'package:women_safety_empowerment_app/screens/employer/employer_job_screen.dart';
-import 'package:women_safety_empowerment_app/screens/employer/employer_profile_page.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/authentication/login_screen.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_sos_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/notifications_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_profile_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_view_job_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_chat_list_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_my_services_page.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_view_services_page.dart';
 
-class EmployerHomeScreen extends StatefulWidget {
-  const EmployerHomeScreen({super.key});
+// Main shell for Woman user with AppBar, Drawer, BottomNavigationBar
+class WomanAppShell extends StatefulWidget {
+  const WomanAppShell({super.key});
 
   @override
-  State<EmployerHomeScreen> createState() => _EmployerHomeScreenState();
+  State<WomanAppShell> createState() => _WomanAppShellState();
 }
 
-// Main home screen for Woman user
-class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
+class _WomanAppShellState extends State<WomanAppShell> {
   int _selectedIndex = 0; // Index for BottomNavigationBar and Drawer highlight
 
-  // Function to sign out user and navigate to LoginScreen
+  // Sign out function
   Future<void> _signOut(BuildContext context) async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
+        // Remove FCM token from Firestore before logout
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -36,6 +42,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
         });
       }
 
+      // Sign out from Firebase Auth
       await FirebaseAuth.instance.signOut();
 
       if (context.mounted) {
@@ -45,33 +52,37 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
         );
       }
     } catch (e) {
+      // Show error message if logout fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Logout failed: $e')),
       );
     }
   }
 
-// List of pages for BottomNavigationBar
+  // List of pages for BottomNavigationBar
   static final List<Widget> _pages = <Widget>[
-    const PostJobPage(), //
-    const EmployerChatListPage(),
-    const EmployerProfilePage(),
+    const WomanJobScreen(),
+    const WomanChatListPage(),
+    const SOSButton(), // Show SOS button page
+    const WomanProfileScreen(),
   ];
 
-  // List of titles for app bar
+  // Corresponding titles for AppBar
   static final List<String> _titles = <String>[
     'Job',
     'Chat',
+    'SOS',
     'Profile',
   ];
 
-  // Function to update BottomNavigationBar index
+  // Handle BottomNavigationBar item tap
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
+  // Fetch user data from Firestore
   Future<Map<String, dynamic>?> _fetchUserData() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
@@ -81,9 +92,9 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
     final userData =
         userSnap.exists ? userSnap.data() as Map<String, dynamic> : {};
 
-    // Fetch profile image from companyProfiles
+    // Fetch profile image from womanProfiles
     DocumentSnapshot profileSnap = await FirebaseFirestore.instance
-        .collection('companyProfiles')
+        .collection('womanProfiles')
         .doc(uid)
         .get();
     final profileData =
@@ -91,10 +102,10 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
 
     // Merge data
     return {
-      'companyName': userData['companyName'] ?? 'No Name',
+      'name': userData['name'] ?? 'No Name',
       'role': userData['role'] ?? 'No Role',
       'email': userData['email'] ?? '',
-      'companyLogo': profileData['companyLogo'] ?? '',
+      'profileImage': profileData['profileImage'] ?? '',
     };
   }
 
@@ -115,14 +126,18 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
           color: hexToColor("#4a6741"),
         ),
       ),
+
+      // Drawer menu
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
+            // DrawerHeader with user info
             FutureBuilder<Map<String, dynamic>?>(
               future: _fetchUserData(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
+                  // Loading indicator while fetching
                   return DrawerHeader(
                     decoration: BoxDecoration(
                       color: hexToColor("#dddddd"),
@@ -132,6 +147,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                     ),
                   );
                 } else if (snapshot.hasError || !snapshot.hasData) {
+                  // Show error if fetch failed
                   return DrawerHeader(
                     decoration: BoxDecoration(
                       color: hexToColor("#dddddd"),
@@ -144,10 +160,11 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                     ),
                   );
                 } else {
+                  // Display user info
                   var data = snapshot.data!;
                   String email = data['email'] ?? 'No email';
                   String role = data['role'] ?? 'No Role';
-                  String imageUrl = data['companyLogo'] ?? '';
+                  String imageUrl = data['profileImage'] ?? '';
 
                   return DrawerHeader(
                     decoration: BoxDecoration(
@@ -156,6 +173,7 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // Profile avatar
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -177,6 +195,8 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 2),
+
+                        // User email
                         Text(
                           email,
                           style: GoogleFonts.openSans(
@@ -186,6 +206,8 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 2),
+
+                        // User role label
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8.0, vertical: 4.0),
@@ -208,7 +230,55 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
               },
             ),
 
-            // Job option in drawer
+            // Drawer menu items
+            ListTile(
+              leading: Icon(
+                Icons.home_repair_service,
+                color: Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'All Services',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const WomanViewServicesPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.home_repair_service,
+                color: Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'Offer Services',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const WomanMyServicesPage()),
+                );
+              },
+            ),
+
+            // Menu items corresponding to BottomNavigationBar pages
             ListTile(
               leading: Icon(
                 Icons.work,
@@ -233,26 +303,21 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                 });
               },
             ),
-
-            // Chat option in drawer
             ListTile(
               leading: Icon(
                 Icons.message,
-                color: _selectedIndex == 1
-                    ? hexToColor("#4a6741") // active color
-                    : Colors.grey, // inactive color
+                color:
+                    _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
                 size: 24,
               ),
               title: Text(
                 'Chat',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
-                  fontWeight: _selectedIndex == 1
-                      ? FontWeight.bold // bold if selected
-                      : FontWeight.w600, // normal weight if not
-                  color: _selectedIndex == 1
-                      ? hexToColor("#4a6741") // active color
-                      : Colors.grey, // inactive color
+                  fontWeight:
+                      _selectedIndex == 1 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 1 ? hexToColor("#4a6741") : Colors.grey,
                 ),
               ),
               onTap: () {
@@ -262,17 +327,15 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                 });
               },
             ),
-
-            // Profile option in drawer
             ListTile(
               leading: Icon(
-                Icons.person,
+                Icons.report,
                 color:
                     _selectedIndex == 2 ? hexToColor("#4a6741") : Colors.grey,
                 size: 24,
               ),
               title: Text(
-                'Profile',
+                'SOS',
                 style: GoogleFonts.openSans(
                   fontSize: 16,
                   fontWeight:
@@ -288,10 +351,80 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
                 });
               },
             ),
-
-            // Logout option in drawer
             ListTile(
               leading: Icon(
+                Icons.person,
+                color:
+                    _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'Profile',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight:
+                      _selectedIndex == 3 ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      _selectedIndex == 3 ? hexToColor("#4a6741") : Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 3;
+                });
+              },
+            ),
+
+            // Other navigation links
+            ListTile(
+              leading: Icon(
+                Icons.notifications,
+                color: Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'Notifications',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotificationsPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.group,
+                color: Colors.grey,
+                size: 24,
+              ),
+              title: Text(
+                'NGO',
+                style: GoogleFonts.openSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const WomanViewNGOPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(
                 Icons.logout,
                 color: Colors.grey,
                 size: 24,
@@ -309,45 +442,17 @@ class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
           ],
         ),
       ),
-
-      // Body content shows page based on selected tab
+      // Main content area
       body: _pages[_selectedIndex],
 
-      // bottomNavigationBar to switch between pages
-      // bottomNavigationBar: buildStyledBottomNav(
-      //   backgroundColor: hexToColor("#dddddd"),
-      //   items: const <BottomNavigationBarItem>[
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.work),
-      //       label: 'Job',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.message),
-      //       label: 'Chat',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.person),
-      //       label: 'Profile',
-      //     ),
-      //   ],
-      //   currentIndex: _selectedIndex,
-      //   selectedItemColor: hexToColor("#4a6741"), // Active icon color
-      //   unselectedItemColor: Colors.grey, // Inactive icon color
-      //   onTap: _onItemTapped, // Tap handler
-      //   selectedLabelStyle: GoogleFonts.openSans(
-      //     fontSize: 14,
-      //     fontWeight: FontWeight.bold,
-      //   ),
-      //   unselectedLabelStyle: GoogleFonts.openSans(
-      //     fontSize: 12,
-      //   ),
-      // ),
+      // BottomNavigationBar
       bottomNavigationBar: buildStyledBottomNav(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Job'),
           BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Chat'),
+          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'SOS'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

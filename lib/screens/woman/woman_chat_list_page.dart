@@ -1,16 +1,19 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'woman_chat_page.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'woman_chat_page.dart';
 
+// Page that shows all chat conversations for the logged-in woman
 class WomanChatListPage extends StatelessWidget {
   const WomanChatListPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
+    // If user is not logged in, show message
     if (currentUser == null) {
       return const Scaffold(
         body: Center(child: Text("Not logged in")),
@@ -19,17 +22,20 @@ class WomanChatListPage extends StatelessWidget {
 
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
+        // Listen to all chats where current user is a participant
         stream: FirebaseFirestore.instance
             .collection("chats")
             .where("participants", arrayContains: currentUser.uid)
             .orderBy("lastMessageTime", descending: true)
             .snapshots(),
         builder: (context, snapshot) {
+          // Show loading while data is loading
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
           final chatDocs = snapshot.data!.docs;
+          // If no chats exist, show message
           if (chatDocs.isEmpty) {
             return Center(
                 child: Text(
@@ -38,21 +44,18 @@ class WomanChatListPage extends StatelessWidget {
             ));
           }
 
+          // Build a list of chat items
           return ListView.builder(
             itemCount: chatDocs.length,
             itemBuilder: (context, index) {
               final chatDoc = chatDocs[index];
               final data = chatDoc.data() as Map<String, dynamic>;
 
-              // final participants = List<String>.from(data["participants"]);
-              // final otherUserId =
-              //     participants.firstWhere((id) => id != currentUser.uid);
-
-              // final lastMessage = data["lastMessage"] ?? "";
+              // Extract participants and find the other user's ID
               final participants = List<String>.from(data["participants"]);
               final otherUserId = participants.firstWhere(
                 (id) => id != currentUser.uid,
-                orElse: () => "",
+                orElse: () => "", // fallback if no other participant
               );
 
               if (otherUserId.isEmpty) {
@@ -62,7 +65,7 @@ class WomanChatListPage extends StatelessWidget {
 
               final lastMessage = data["lastMessage"] ?? "";
 
-              // 🔹 Step 1: fetch role from users collection
+              //  Step 1: fetch role from users collection
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
                     .collection("users")
@@ -77,7 +80,7 @@ class WomanChatListPage extends StatelessWidget {
                       userRoleSnap.data!.data() as Map<String, dynamic>;
                   final role = userRoleData["role"] ?? "User";
 
-                  // 🔹 Step 2: decide which profile collection to fetch
+                  //  Step 2: decide which profile collection to fetch
                   late Future<DocumentSnapshot> profileFuture;
                   if (role == "Woman") {
                     profileFuture = FirebaseFirestore.instance
@@ -101,7 +104,7 @@ class WomanChatListPage extends StatelessWidget {
                         .get();
                   }
 
-                  // 🔹 Step 3: fetch actual profile details
+                  //  Step 3: fetch actual profile details
                   return FutureBuilder<DocumentSnapshot>(
                     future: profileFuture,
                     builder: (context, profileSnap) {
@@ -125,6 +128,7 @@ class WomanChatListPage extends StatelessWidget {
                         }
                       }
 
+                      // Step 4: Build chat list tile
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundImage:
@@ -142,6 +146,7 @@ class WomanChatListPage extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         trailing: StreamBuilder<QuerySnapshot>(
+                          // Show count of unread messages
                           stream: FirebaseFirestore.instance
                               .collection("chats")
                               .doc(chatDoc.id)
@@ -169,7 +174,7 @@ class WomanChatListPage extends StatelessWidget {
                           },
                         ),
                         onTap: () async {
-                          // Mark unread as read
+                          // Step 5: Mark all unread messages as read
                           final unreadMessages = await FirebaseFirestore
                               .instance
                               .collection("chats")
@@ -183,7 +188,7 @@ class WomanChatListPage extends StatelessWidget {
                             await msg.reference.update({"isRead": true});
                           }
 
-                          // Open Woman chat page
+                          // Step 6: Open the chat page with selected user
                           Navigator.push(
                             context,
                             MaterialPageRoute(

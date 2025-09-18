@@ -1,17 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'employer_chat_page.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'employer_chat_page.dart';
-
-// Import your chat page
-// import 'chat_page.dart'; // 🔹 Make sure to create this screen
 
 class EmployerViewJobApplicationsPage extends StatelessWidget {
   final String jobId; // Pass this when navigating
-  final String employerId; // ✅ Pass employerId when opening this page
+  final String employerId; // Pass employerId when opening this page
 
   const EmployerViewJobApplicationsPage({
     Key? key,
@@ -44,7 +42,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
     return DateFormat("dd MMM yyyy, hh:mm a").format(dt);
   }
 
-  // 🔹 Update status in Firestore
+  // Update status in Firestore
   Future<void> _updateStatus(
       String jobId, String userId, String newStatus) async {
     await FirebaseFirestore.instance
@@ -86,7 +84,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
 
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
-                    .collection('womanProfiles') // ✅ fetch from womanProfiles
+                    .collection('womanProfiles') // fetch from womanProfiles
                     .doc(userId)
                     .get(),
                 builder: (context, userSnapshot) {
@@ -170,7 +168,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
 
                           const SizedBox(height: 10),
 
-                          // 🔹 Application details
+                          // Application details
                           Row(
                             children: [
                               const Text("Status: ",
@@ -206,7 +204,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
 
                           const SizedBox(height: 10),
 
-                          // 🔹 Education
+                          // Education
                           if (userData['education'] != null)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +230,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
 
                           const SizedBox(height: 8),
 
-                          // 🔹 Skills
+                          // Skills
                           if (userData['skills'] != null &&
                               (userData['skills'] as List).isNotEmpty) ...[
                             const Text("Skills",
@@ -251,7 +249,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
 
                           const SizedBox(height: 8),
 
-                          // 🔹 Languages
+                          // Languages
                           if (userData['languages'] != null &&
                               (userData['languages'] as List).isNotEmpty) ...[
                             const Text("Languages",
@@ -270,7 +268,7 @@ class EmployerViewJobApplicationsPage extends StatelessWidget {
 
                           const SizedBox(height: 12),
 
-                          // 🔹 Chat Button
+                          // Chat Button
                           Align(
                             alignment: Alignment.centerRight,
                             child: ElevatedButton.icon(

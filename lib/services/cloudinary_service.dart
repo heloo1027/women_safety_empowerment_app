@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 // Function to upload profile image
 Future<String?> uploadProfileImage() async {
@@ -18,7 +18,7 @@ Future<String?> _uploadImageToCloudinary(String uploadPreset) async {
 
   File imageFile = File(pickedFile.path);
 
-  String cloudName = 'dztobyinv'; // Your Cloudinary cloud name
+  String cloudName = 'dztobyinv'; // Cloudinary cloud name
 
   final uri =
       Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');

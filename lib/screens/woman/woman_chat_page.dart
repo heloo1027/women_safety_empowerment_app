@@ -1,10 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 import 'package:women_safety_empowerment_app/services/send_message_notification.dart';
 import 'package:women_safety_empowerment_app/widgets/common/chat_page_styles.dart';
-import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
+// Chat page for Woman user to chat with another user
 class WomanChatPage extends StatefulWidget {
   final String receiverId;
   final String receiverName;
@@ -23,6 +25,7 @@ class _WomanChatPageState extends State<WomanChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
+  // Unique chat ID based on both participants' IDs (sorted to be consistent)
   String get chatId {
     final ids = [currentUser!.uid, widget.receiverId]..sort();
     return ids.join("_");
@@ -31,7 +34,7 @@ class _WomanChatPageState extends State<WomanChatPage> {
   @override
   void initState() {
     super.initState();
-    _markAsRead();
+    _markAsRead(); // Mark unread messages as read on page load
   }
 
   @override
@@ -40,6 +43,7 @@ class _WomanChatPageState extends State<WomanChatPage> {
     super.dispose();
   }
 
+  // Marks all unread messages in this chat as read
   Future<void> _markAsRead() async {
     try {
       final unreadMessages = await FirebaseFirestore.instance
@@ -58,19 +62,22 @@ class _WomanChatPageState extends State<WomanChatPage> {
     }
   }
 
+  // Handles pressing the send button
   void _handleSendButton() {
     final message = _messageController.text.trim();
-    if (message.isEmpty) return;
+    if (message.isEmpty) return; // Do nothing if input is empty
 
     _messageController.clear();
-    _sendMessage(message);
+    _sendMessage(message); // Send message
   }
 
+  // Sends a message to Firestore and triggers notification
   Future<void> _sendMessage(String message) async {
     try {
       final chatRef =
           FirebaseFirestore.instance.collection('chats').doc(chatId);
 
+      // Add message to messages subcollection
       await chatRef.collection('messages').add({
         "senderId": currentUser!.uid,
         "receiverId": widget.receiverId,
@@ -79,6 +86,7 @@ class _WomanChatPageState extends State<WomanChatPage> {
         "isRead": false,
       });
 
+      // Update chat info (last message, participants)
       await chatRef.set({
         "participants": [currentUser!.uid, widget.receiverId],
         "lastMessage": message,
@@ -92,11 +100,12 @@ class _WomanChatPageState extends State<WomanChatPage> {
           .get();
 
       final receiverData = receiverDoc.data();
-      String senderName = await _getSenderName();
+      String senderName = await _getSenderName(); // Get sender's display name
 
       if (receiverDoc.exists && receiverData?['fcmToken'] != null) {
         final token = receiverData!['fcmToken'];
 
+        // Save notification in Firestore
         await FirebaseFirestore.instance.collection('notifications').add({
           "toUserID": widget.receiverId,
           "title": "New message from $senderName",
@@ -104,6 +113,7 @@ class _WomanChatPageState extends State<WomanChatPage> {
           "timestamp": FieldValue.serverTimestamp(),
         });
 
+        // Send push notification
         await sendMessageNotification(
           token: token,
           title: "New message from $senderName",
@@ -111,6 +121,7 @@ class _WomanChatPageState extends State<WomanChatPage> {
         );
       }
     } catch (e) {
+      // Show error if sending fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error sending message: $e")),
       );
@@ -119,6 +130,7 @@ class _WomanChatPageState extends State<WomanChatPage> {
     _messageController.clear();
   }
 
+  // Fetches the display name of the current user based on role
   Future<String> _getSenderName() async {
     String senderName = "Someone";
     final senderDoc = await FirebaseFirestore.instance
@@ -166,9 +178,9 @@ class _WomanChatPageState extends State<WomanChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: true, // Adjust when keyboard appears
       appBar: buildStyledAppBar(
-        title: widget.receiverName,
+        title: widget.receiverName, // Display receiver's name
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),

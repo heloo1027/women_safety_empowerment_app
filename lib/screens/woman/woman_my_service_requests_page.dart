@@ -1,10 +1,10 @@
 // This page is to view who has requested for my service
-
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'woman_chat_page.dart'; 
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'woman_chat_page.dart'; // 👈 Import your chat page
+
 
 class WomanServiceRequestsPage extends StatelessWidget {
   final String serviceId;
@@ -27,12 +27,6 @@ class WomanServiceRequestsPage extends StatelessWidget {
     return 'Unknown';
   }
 
-  void _updateStatus(String requestId, String newStatus) {
-    FirebaseFirestore.instance
-        .collection('serviceRequests')
-        .doc(requestId)
-        .update({'status': newStatus});
-  }
 
   void _openChat(
       BuildContext context, String requesterId, String receiverName) {

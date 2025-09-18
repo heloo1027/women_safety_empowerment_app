@@ -1,11 +1,13 @@
 // This page is to view all the service that are posted by other
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'woman_requested_services_page.dart';
 import 'woman_view_services_detail_page.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+
 
 class WomanViewServicesPage extends StatefulWidget {
   const WomanViewServicesPage({Key? key}) : super(key: key);
@@ -41,7 +43,7 @@ class _WomanViewServicesPageState extends State<WomanViewServicesPage> {
             hintText: "Search by service or category",
           ),
 
-          // 📌 My Requests Button
+          //  My Requests Button
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: bigGreyButton(
@@ -72,13 +74,13 @@ class _WomanViewServicesPageState extends State<WomanViewServicesPage> {
                 final currentUser = FirebaseAuth.instance.currentUser;
                 final serviceDocs = snapshot.data!.docs;
 
-                // 🔹 Step 1: Exclude services where userId == current login user
+                //  Step 1: Exclude services where userId == current login user
                 final otherUserServices = serviceDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   return data['userId'] != currentUser?.uid;
                 }).toList();
 
-                // 🔹 Step 2: Apply search filter
+                //  Step 2: Apply search filter
                 final filteredDocs = otherUserServices.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final title = (data['title'] ?? '').toString().toLowerCase();

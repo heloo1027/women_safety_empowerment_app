@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:women_safety_empowerment_app/screens/ngo/ngo_donation_details_page.dart';
-import 'package:women_safety_empowerment_app/screens/ngo/ngo_request_details_page.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/screens/ngo/ngo_request_details_page.dart';
+import 'package:women_safety_empowerment_app/screens/ngo/ngo_donation_details_page.dart';
 
 class NGORequestDonationPage extends StatefulWidget {
   const NGORequestDonationPage({Key? key}) : super(key: key);
@@ -15,6 +16,7 @@ class NGORequestDonationPage extends StatefulWidget {
 }
 
 class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
+  // Predefined donation categories and statuses
   final categories = [
     "Funds",
     "Sanitary Products",
@@ -32,6 +34,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
   String? selectedStatus;
   String? selectedItem;
 
+  // Controllers for input fields
   final TextEditingController itemController = TextEditingController();
   final TextEditingController quantityController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
@@ -41,38 +44,45 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
   @override
   void initState() {
     super.initState();
+    // Update selectedItem whenever user types in search box
     filterItemController.addListener(() {
       selectedItem = filterItemController.text;
     });
   }
 
+  // Show dialog to create or edit donation request
   Future<void> _showRequestDialog({DocumentSnapshot? doc}) async {
     String? category;
     bool canEditOrDelete = true; // NEW: control editing & delete
 
     if (doc != null) {
+      // Editing an existing request: populate fields
       final data = doc.data() as Map<String, dynamic>;
       category = data['category'];
       itemController.text = data['item'] ?? '';
       quantityController.text = data['quantity']?.toString() ?? '';
       descriptionController.text = data['description'] ?? '';
 
-      // NEW: check if donations exist for this contribution
+      // Check if donations exist for this request
       final donationsSnap = await FirebaseFirestore.instance
           .collection('contributions')
           .doc(doc.id)
           .collection('donations')
           .get();
       final hasDonations = donationsSnap.docs.isNotEmpty;
+
+      // Can edit only if status is "In Progress" and no donations exist
       final status = data['status'] ?? 'In Progress';
       canEditOrDelete = status == 'In Progress' && !hasDonations;
     } else {
+      // Creating new request: clear fields
       category = null;
       itemController.clear();
       quantityController.clear();
       descriptionController.clear();
     }
 
+    // Show the dialog
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -87,6 +97,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Category dropdown
                   DropdownButtonFormField<String>(
                     value: category,
                     decoration: const InputDecoration(labelText: "Category"),
@@ -100,6 +111,8 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                         val == null ? "Please select a category" : null,
                   ),
                   const SizedBox(height: 12),
+
+                  // Item input
                   TextFormField(
                     controller: itemController,
                     decoration: const InputDecoration(
@@ -111,6 +124,8 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                     enabled: canEditOrDelete, // NEW
                   ),
                   const SizedBox(height: 12),
+
+                  // Quantity input
                   TextFormField(
                     controller: quantityController,
                     keyboardType: TextInputType.number,
@@ -124,6 +139,8 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                     enabled: canEditOrDelete, // NEW
                   ),
                   const SizedBox(height: 12),
+
+                  // Description input
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxHeight: 150),
                     child: TextFormField(
@@ -136,7 +153,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                       validator: (val) => val == null || val.isEmpty
                           ? "Please enter details"
                           : null,
-                      // enabled: canEditOrDelete, // NEW
+                      // enabled: canEditOrDelete,
                     ),
                   ),
                 ],
@@ -149,7 +166,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
               child: const Text("Cancel"),
             ),
 
-            // NEW: Delete button
+            // Delete button for editable requests
             if (doc != null && canEditOrDelete)
               TextButton(
                 onPressed: () async {
@@ -166,6 +183,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                 child: const Text("Delete"),
               ),
 
+            // Post/Update button
             TextButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
@@ -188,10 +206,12 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                     'updatedAt': FieldValue.serverTimestamp(),
                   };
                   if (doc == null) {
+                    // Create new request
                     final docRef = await FirebaseFirestore.instance
                         .collection('contributions')
                         .add(payload);
                   } else {
+                    // Update existing request
                     await FirebaseFirestore.instance
                         .collection('contributions')
                         .doc(doc.id)
@@ -310,6 +330,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                 ),
               ),
               Expanded(
+                // List of filtered requests
                 child: ValueListenableBuilder<TextEditingValue>(
                     valueListenable: filterItemController,
                     builder: (context, value, _) {
@@ -352,6 +373,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Header row: Item name & status chip
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
@@ -363,6 +385,8 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                                     ],
                                   ),
                                   const SizedBox(height: 4),
+
+                                  // Category
                                   RichText(
                                     text: TextSpan(
                                       style:
@@ -434,6 +458,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                                   ),
                                   const SizedBox(height: 12),
 
+                                  // Description
                                   RichText(
                                     text: TextSpan(
                                       style:
@@ -475,6 +500,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                                   ),
                                   const SizedBox(height: 12),
 
+                                  // Action buttons
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
@@ -517,6 +543,7 @@ class _NGORequestDonationPageState extends State<NGORequestDonationPage> {
                                           child: const Text("View Requests"),
                                         ),
 
+                                      // Show Edit if In Progress
                                       if (data['status'] != 'Completed')
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(

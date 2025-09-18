@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
+// Page to edit an existing job posting
 class EditJobPage extends StatefulWidget {
-  final Map<String, dynamic> jobData;
-  final String jobId;
+  final Map<String, dynamic> jobData; // Existing job details
+  final String jobId; // Firestore document ID of the job
 
   const EditJobPage({super.key, required this.jobData, required this.jobId});
 
@@ -18,12 +20,14 @@ class _EditJobPageState extends State<EditJobPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
+  // Controllers for form fields
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late TextEditingController _salaryController;
   late TextEditingController _locationController;
   final TextEditingController _skillController = TextEditingController();
 
+  // Job type, status, and selected skills
   String _jobType = 'Full-time';
   String _jobStatus = 'Open';
   List<String> _selectedSkills = [];
@@ -31,6 +35,7 @@ class _EditJobPageState extends State<EditJobPage> {
   @override
   void initState() {
     super.initState();
+    // Initialize form fields with existing job data
     _titleController = TextEditingController(text: widget.jobData['title']);
     _descriptionController =
         TextEditingController(text: widget.jobData['description']);
@@ -44,6 +49,7 @@ class _EditJobPageState extends State<EditJobPage> {
 
   @override
   void dispose() {
+    // Dispose controllers to free memory
     _titleController.dispose();
     _descriptionController.dispose();
     _salaryController.dispose();
@@ -52,18 +58,22 @@ class _EditJobPageState extends State<EditJobPage> {
     super.dispose();
   }
 
+  // Function to add a skill to the list
   void _addSkill() {
     String skill = _skillController.text.trim();
     if (skill.isNotEmpty && !_selectedSkills.contains(skill)) {
       setState(() {
-        _selectedSkills.add(skill);
-        _skillController.clear();
+        _selectedSkills.add(skill); // Add skill
+        _skillController.clear(); // Clear input field
       });
     }
   }
 
+  // Function to update job in Firestore
   Future<void> _updateJob() async {
+    // Validate form
     if (!_formKey.currentState!.validate()) return;
+    // Ensure at least one skill is added
     if (_selectedSkills.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add at least one skill')),
@@ -76,6 +86,7 @@ class _EditJobPageState extends State<EditJobPage> {
     });
 
     try {
+      // Update job document in Firestore
       await FirebaseFirestore.instance
           .collection('jobs')
           .doc(widget.jobId)
@@ -90,12 +101,14 @@ class _EditJobPageState extends State<EditJobPage> {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Job updated successfully')),
       );
 
       Navigator.pop(context);
     } catch (e) {
+      // Show error message if update fails
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to update job')),
       );

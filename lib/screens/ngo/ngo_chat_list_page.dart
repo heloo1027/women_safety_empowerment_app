@@ -1,15 +1,19 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:women_safety_empowerment_app/utils/utils.dart';
-import 'ngo_chat_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'ngo_chat_page.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
+
+// Page that shows all chat conversations for the logged-in NGO
 class NGOChatListPage extends StatelessWidget {
   const NGOChatListPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Get the currently logged-in user
     final currentUser = FirebaseAuth.instance.currentUser;
+    // If no user is logged in, show message
     if (currentUser == null) {
       return const Scaffold(
         body: Center(child: Text("Not logged in")),
@@ -19,20 +23,25 @@ class NGOChatListPage extends StatelessWidget {
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
+            // Listen to all chats where current user is a participant
             .collection("chats")
             .where("participants", arrayContains: currentUser.uid)
             .orderBy("lastMessageTime", descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
+            // Show loading indicator while fetching chats
             return const Center(child: CircularProgressIndicator());
           }
 
           final chatDocs = snapshot.data!.docs;
+
+          // If no chats exist, show placeholder message
           if (chatDocs.isEmpty) {
             return const Center(child: Text("No conversations yet."));
           }
 
+          // ListView to display all chat threads
           return ListView.builder(
             itemCount: chatDocs.length,
             itemBuilder: (context, index) {
@@ -46,9 +55,10 @@ class NGOChatListPage extends StatelessWidget {
 
               final lastMessage = data["lastMessage"] ?? "";
 
+              // Fetch profile info of the other participant (woman)
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
-                    .collection("womanProfiles") // ✅ Chat is with women
+                    .collection("womanProfiles") // Chat is with women
                     .doc(otherUserId)
                     .get(),
                 builder: (context, userSnap) {
@@ -62,7 +72,9 @@ class NGOChatListPage extends StatelessWidget {
                     avatarUrl = userData["profileImage"];
                   }
 
+                  // ListTile to display chat info
                   return ListTile(
+                    // Show profile avatar or first letter if no image
                     leading: CircleAvatar(
                       backgroundImage:
                           (avatarUrl != null && avatarUrl.isNotEmpty)
@@ -78,6 +90,8 @@ class NGOChatListPage extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+
+                    // Trailing unread message count badge
                     trailing: StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection("chats")
@@ -104,7 +118,7 @@ class NGOChatListPage extends StatelessWidget {
                       },
                     ),
                     onTap: () async {
-                      // ✅ Mark unread as read
+                      // Mark unread as read
                       final unreadMessages = await FirebaseFirestore.instance
                           .collection("chats")
                           .doc(chatDoc.id)
@@ -117,7 +131,7 @@ class NGOChatListPage extends StatelessWidget {
                         msg.reference.update({"isRead": true});
                       }
 
-                      // ✅ Open NGO chat page
+                      //  Open NGO chat page
                       Navigator.push(
                         context,
                         MaterialPageRoute(

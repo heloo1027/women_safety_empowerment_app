@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
@@ -20,7 +21,7 @@ class WomanViewJobScreen extends StatelessWidget {
 
     final userId = user.uid;
 
-    // 🔹 Fetch user profile
+    //  Fetch user profile
     final userDoc = await FirebaseFirestore.instance
         .collection('womanProfiles')
         .doc(userId)
@@ -37,7 +38,7 @@ class WomanViewJobScreen extends StatelessWidget {
 
     final data = userDoc.data() ?? {};
 
-    // 🔹 Validate required fields
+    //  Validate required fields
     final resume = data['resume'];
     final education = data['education'];
     final skills = data['skills'];
@@ -79,7 +80,7 @@ class WomanViewJobScreen extends StatelessWidget {
       return;
     }
 
-    // 🔹 Save application under jobs/{jobId}/applications/{userId}
+    //  Save application under jobs/{jobId}/applications/{userId}
     await FirebaseFirestore.instance
         .collection('jobs')
         .doc(jobId)
@@ -115,8 +116,7 @@ class WomanViewJobScreen extends StatelessWidget {
           );
         }
 
-        Map<String, dynamic> jobData =
-            jobSnapshot.data!.data() as Map<String, dynamic>;
+        Map<String, dynamic> jobData = jobSnapshot.data!.data() as Map<String, dynamic>;
 
         String employerId = jobData['employerID'] ?? '';
         String postedDate = '';
@@ -243,7 +243,7 @@ class WomanViewJobScreen extends StatelessWidget {
                                 .doc(jobId)
                                 .collection('applications')
                                 .doc(user.uid)
-                                .snapshots(), // 👈 real-time stream
+                                .snapshots(), //  real-time stream
                             builder: (context, appSnapshot) {
                               if (appSnapshot.connectionState ==
                                   ConnectionState.waiting) {
@@ -362,7 +362,7 @@ class WomanViewJobScreen extends StatelessWidget {
                                               ?.toDate();
                                       final womanId = data['womanId'];
 
-                                      // 👇 Nested FutureBuilder to fetch reviewer profile
+                                      //  Nested FutureBuilder to fetch reviewer profile
                                       return FutureBuilder<DocumentSnapshot>(
                                         future: FirebaseFirestore.instance
                                             .collection('womanProfiles')

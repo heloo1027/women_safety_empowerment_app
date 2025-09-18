@@ -1,11 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'woman_chat_page.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'woman_chat_page.dart';
 
 class WomanMyRequestsPage extends StatefulWidget {
   const WomanMyRequestsPage({Key? key}) : super(key: key);
@@ -51,8 +51,6 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
     );
   }
 
-  // ... keep your _fetchMyRequests and _showEditQuantityDialog ...
-
   @override
   Widget build(BuildContext context) {
     if (currentUser == null) {
@@ -67,7 +65,7 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
       appBar: buildStyledAppBar(title: "My Requests"),
       body: Column(
         children: [
-          // 🔍 Search bar
+          //  Search bar
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
@@ -111,7 +109,7 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
                   );
                 }
 
-                // 🔍 Apply search filter
+                //  Apply search filter
                 final filteredRequests = requests.where((data) {
                   final ngoName =
                       (data['ngoName'] ?? "").toString().toLowerCase();
@@ -251,7 +249,7 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
                                           .where('womanId',
                                               isEqualTo: currentUser!.uid)
                                           .limit(1)
-                                          .snapshots(), // 👈 live updates
+                                          .snapshots(), //  live updates
                                       builder: (context, reviewSnapshot) {
                                         if (reviewSnapshot.connectionState ==
                                             ConnectionState.waiting) {
@@ -338,7 +336,7 @@ class _WomanMyRequestsPageState extends State<WomanMyRequestsPage> {
         final contributionId = doc.id;
 
         // parent fields we want to copy into each child request
-        final parentData = doc.data() as Map<String, dynamic>;
+        final parentData = doc.data();
         final ngoId = parentData['ngoId'];
         final category = parentData['category'];
         final item = parentData['item'];

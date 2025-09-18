@@ -6,9 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:women_safety_empowerment_app/utils/utils.dart';
 
 import '../../widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/utils/utils.dart';
 
 class NGOProfileScreen extends StatefulWidget {
   const NGOProfileScreen({super.key});
@@ -18,22 +18,30 @@ class NGOProfileScreen extends StatefulWidget {
 }
 
 class _NGOProfileScreenState extends State<NGOProfileScreen> {
+  // Form key to validate and save form
   final _formKey = GlobalKey<FormState>();
+  // Controllers for form fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
+  // Store profile image URL (from Firebase or Cloudinary)
   String? _profileImageUrl;
+
+  // Loading indicator state
   bool _isLoading = false;
 
+  // For picking images from gallery
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
+    // Fetch existing NGO profile data when the screen loads
     _fetchUserData();
   }
 
+  // Fetch NGO profile data from Firestore
   Future<void> _fetchUserData() async {
     setState(() => _isLoading = true);
     String uid = FirebaseAuth.instance.currentUser!.uid;
@@ -44,6 +52,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
           .doc(uid)
           .get();
 
+      // Populate the fields if profile data exists
       if (snapshot.exists) {
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
         setState(() {
@@ -63,6 +72,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     setState(() => _isLoading = false);
   }
 
+  // Save or update NGO profile in Firestore
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -70,6 +80,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Save profile data with merge option (update or create)
       await FirebaseFirestore.instance.collection("ngoProfiles").doc(uid).set({
         'name': _nameController.text.trim(),
         'phone': _phoneController.text.trim(),
@@ -92,6 +103,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     setState(() => _isLoading = false);
   }
 
+  // Pick an image from gallery and upload to Cloudinary
   Future<void> _pickAndUploadImage() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -100,8 +112,10 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Upload to Cloudinary
       String? imageUrl = await _uploadImageToCloudinary(File(pickedFile.path));
       if (imageUrl != null) {
+        // Save uploaded image URL in Firestore
         await FirebaseFirestore.instance
             .collection("ngoProfiles")
             .doc(uid)
@@ -110,6 +124,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
 
+        // Update state to show new profile image
         setState(() => _profileImageUrl = imageUrl);
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,6 +141,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
     setState(() => _isLoading = false);
   }
 
+  // Upload selected image to Cloudinary and return the image URL
   Future<String?> _uploadImageToCloudinary(File imageFile) async {
     String cloudName = 'dztobyinv';
     String uploadPreset = 'profile_upload_preset';
@@ -151,6 +167,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
 
   @override
   void dispose() {
+    // Dispose controllers to free resources
     _nameController.dispose();
     _phoneController.dispose();
     _descriptionController.dispose();
@@ -159,6 +176,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading spinner while fetching or saving
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -167,6 +185,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
       padding: kPagePadding,
       child: Center(
         child: Container(
+          // Ensure card takes at least 80% of screen height
           constraints: BoxConstraints(
             minHeight: MediaQuery.of(context).size.height * 0.8,
           ),
@@ -175,6 +194,7 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
               key: _formKey,
               child: Column(
                 children: [
+                  // Profile Image
                   GestureDetector(
                     onTap: _pickAndUploadImage,
                     child: CircleAvatar(
@@ -190,6 +210,8 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 20.0),
+
+                  // NGO Name field
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(
@@ -204,6 +226,8 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
                     },
                   ),
                   const SizedBox(height: 10.0),
+
+                  // Phone field
                   TextFormField(
                     controller: _phoneController,
                     decoration: const InputDecoration(
@@ -213,6 +237,8 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 10.0),
+
+                  // Description field
                   TextFormField(
                     controller: _descriptionController,
                     decoration: const InputDecoration(
@@ -222,6 +248,8 @@ class _NGOProfileScreenState extends State<NGOProfileScreen> {
                     maxLines: 8,
                   ),
                   const SizedBox(height: 20.0),
+
+                  // Save button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(

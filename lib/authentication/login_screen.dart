@@ -2,10 +2,11 @@ import 'package:sizer/sizer.dart'; // Responsive UI based on screen size
 import 'package:flutter/material.dart'; // Core Flutter UI package
 import 'package:google_fonts/google_fonts.dart'; // Use Google Fonts
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase authentication
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
 import 'package:page_transition/page_transition.dart'; // Animated page transitions
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Securely store user session data
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Securely store user session data
+
 
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/authentication/auth_wrapper.dart';
@@ -36,39 +37,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _obscurePassword = !_obscurePassword;
     });
   }
-
-  // Handles user sign in using Firebase Authentication
-  // Future<void> _signIn() async {
-  //   if (_formKey.currentState?.validate() ?? false) {
-  //     try {
-  //       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-  //         email: _emailController.text.trim(),
-  //         password: _passwordController.text,
-  //       );
-
-  //       User? user = userCredential.user; // Retrieves signed-in user
-
-  //       if (user != null) {
-  //         // Save user ID and email securely in device storage
-  //         await _secureStorage.write(key: 'userID', value: user.uid);
-  //         await _secureStorage.write(key: 'userEmail', value: user.email!);
-
-  //         if (mounted) {
-  //           // Navigate to AuthWrapper after successful login
-  //           Navigator.pushReplacement(
-  //             context,
-  //             MaterialPageRoute(builder: (context) => const AuthWrapper()),
-  //           );
-  //         }
-  //       }
-  //     } on FirebaseAuthException catch (e) {
-  //       _showErrorDialog(e.message ?? 'Login failed');
-  //     } catch (e) {
-  //       _showErrorDialog('An error occurred. Please try again.');
-  //       print('Login error: $e');
-  //     }
-  //   }
-  // }
 
   Future<void> _signIn() async {
     if (_formKey.currentState?.validate() ?? false) {

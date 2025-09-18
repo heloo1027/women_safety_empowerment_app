@@ -1,10 +1,12 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:women_safety_empowerment_app/screens/woman/woman_chat_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:women_safety_empowerment_app/screens/woman/woman_chat_page.dart';
+
 
 class WomanMyRequestPage extends StatefulWidget {
   const WomanMyRequestPage({super.key});
@@ -26,7 +28,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
     _myRequestsStream = _fetchMyDonationRequests();
   }
 
-  // 🔹 fetch donations linked to current user
+  //  fetch donations linked to current user
   Stream<List<Map<String, dynamic>>> _fetchMyDonationRequests() {
     final currentUser = _auth.currentUser;
     if (currentUser == null) return Stream.value([]);
@@ -44,7 +46,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
 
       for (final doc in snap.docs) {
         final contributionId = doc.id;
-        final parent = doc.data() as Map<String, dynamic>;
+        final parent = doc.data();
 
         final ngoId = parent['ngoId'];
         final category = parent['category'];
@@ -60,7 +62,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
               .where('womanId', isEqualTo: womanId)
               .snapshots()
               .listen((reqSnap) async {
-            // ✅ fetch NGO name from ngoProfiles
+            //  fetch NGO name from ngoProfiles
             final ngoDoc =
                 await _firestore.collection('ngoProfiles').doc(ngoId).get();
             final ngoName = ngoDoc.data()?['name'] ?? "Unknown NGO";
@@ -70,7 +72,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
               data['donationId'] = donDoc.id;
               data['contributionId'] = contributionId;
               data['ngoId'] = ngoId;
-              data['ngoName'] = ngoName; // ✅ from ngoProfiles
+              data['ngoName'] = ngoName; //  from ngoProfiles
               data['category'] = category;
               data['item'] = item;
               data['totalQuantity'] = totalQuantity;
@@ -127,7 +129,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
     return controller.stream;
   }
 
-  // 🔹 chip widget
+  //  chip widget
   Widget buildStyledChip(String status) {
     Color bgColor;
     // Color textColor;
@@ -153,7 +155,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
     );
   }
 
-  // 🔹 row widget
+  //  row widget
   Widget _buildDetailRow(String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +180,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
     );
   }
 
-  // 🔹 dialog for editing
+  //  dialog for editing
   Future<void> _showUpdateDialog(
       BuildContext context, Map<String, dynamic> data) async {
     final ctrl = TextEditingController(text: data['quantity'].toString());
@@ -243,23 +245,23 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
   }
 
   Future<void> _showReviewDialog(
-  BuildContext context, {
-  required String ngoId,
-  required String donationId,
-  required String ngoName,
-  DocumentSnapshot? existingReview,
-}) async {
-  int rating = existingReview?.get('rating') ?? 0;
-  final reviewController = TextEditingController(
-    text: existingReview?.get('comment') ?? '',
-  );
+    BuildContext context, {
+    required String ngoId,
+    required String donationId,
+    required String ngoName,
+    DocumentSnapshot? existingReview,
+  }) async {
+    int rating = existingReview?.get('rating') ?? 0;
+    final reviewController = TextEditingController(
+      text: existingReview?.get('comment') ?? '',
+    );
 
-  await showDialog(
-    context: context,
-    builder: (ctx) {
-      return StatefulBuilder(
-        builder: (ctx, setState) {
-          return AlertDialog(
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
               title: Text(
                 "Review for $ngoName",
                 style: kTitleTextStyle,
@@ -267,7 +269,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ⭐ Star rating row
+                  //  Star rating row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
@@ -295,57 +297,57 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
                 ],
               ),
               actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Cancel"),
-              ),
-              TextButton(
-                onPressed: () async {
-                  if (rating < 1 || rating > 5) {
-                    // Use the dialog's context (ctx) to show a snackbar within the dialog
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                          content: Text("Please provide a rating.")),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (rating < 1 || rating > 5) {
+                      // Use the dialog's context (ctx) to show a snackbar within the dialog
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(
+                            content: Text("Please provide a rating.")),
+                      );
+                      return;
+                    }
+
+                    final reviewData = {
+                      'ngoId': ngoId,
+                      'donationId': donationId,
+                      'womanId': _auth.currentUser!.uid,
+                      'rating': rating,
+                      'comment': reviewController.text.trim(),
+                      'createdAt': FieldValue.serverTimestamp(),
+                    };
+
+                    String snackBarMessage = "Review submitted successfully!";
+
+                    if (existingReview == null) {
+                      await _firestore.collection('ngoReviews').add(reviewData);
+                    } else {
+                      await existingReview.reference.update(reviewData);
+                      snackBarMessage = "Review updated successfully!";
+                    }
+
+                    Navigator.pop(ctx); // Close the dialog first
+
+                    //  Use the outer context to show the snackbar on the main screen
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(snackBarMessage),
+                      ),
                     );
-                    return;
-                  }
-
-                  final reviewData = {
-                    'ngoId': ngoId,
-                    'donationId': donationId,
-                    'womanId': _auth.currentUser!.uid,
-                    'rating': rating,
-                    'comment': reviewController.text.trim(),
-                    'createdAt': FieldValue.serverTimestamp(),
-                  };
-
-                  String snackBarMessage = "Review submitted successfully!";
-
-                  if (existingReview == null) {
-                    await _firestore.collection('ngoReviews').add(reviewData);
-                  } else {
-                    await existingReview.reference.update(reviewData);
-                    snackBarMessage = "Review updated successfully!";
-                  }
-
-                  Navigator.pop(ctx); // Close the dialog first
-
-                  // ✅ Use the outer context to show the snackbar on the main screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(snackBarMessage),
-                    ),
-                  );
-                },
-                child: Text(existingReview == null ? "Submit" : "Update"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+                  },
+                  child: Text(existingReview == null ? "Submit" : "Update"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -353,7 +355,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
       appBar: buildStyledAppBar(title: ("My Donation Requests")),
       body: Column(
         children: [
-          // 🔹 Search bar
+          //  Search bar
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
@@ -416,7 +418,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 🔹 NGO + Status
+                            //  NGO + Status
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -467,9 +469,9 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
                                       MaterialPageRoute(
                                         builder: (_) => WomanChatPage(
                                           receiverId: req[
-                                              'ngoId'], // ✅ pass actual ngoId
+                                              'ngoId'], //  pass actual ngoId
                                           receiverName:
-                                              ngoName, // ✅ ngo name from ngoProfiles
+                                              ngoName, //  ngo name from ngoProfiles
                                         ),
                                       ),
                                     );
@@ -477,7 +479,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
                                   child: const Text("Chat"),
                                 ),
                                 const SizedBox(width: 8),
-                                // 🔹 Review button (only if Completed)
+                                //  Review button (only if Completed)
                                 if (status == "Completed")
                                   StreamBuilder<QuerySnapshot>(
                                     stream: _firestore
@@ -511,7 +513,7 @@ class _WomanMyRequestPageState extends State<WomanMyRequestPage> {
                                               context,
                                               ngoId: req['ngoId'],
                                               donationId: req[
-                                                  'donationId'], // 🔹 tie to donationId
+                                                  'donationId'], //  tie to donationId
                                               ngoName: ngoName,
                                               existingReview: reviewDoc,
                                             );

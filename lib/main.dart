@@ -2,14 +2,15 @@ import 'package:sizer/sizer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
-import 'package:women_safety_empowerment_app/authentication/auth_wrapper.dart';
-import 'package:women_safety_empowerment_app/screens/woman/notifications_screen.dart'; // Import your NotificationsPage
-import 'package:women_safety_empowerment_app/services/flutter_local_notification.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
+import 'package:women_safety_empowerment_app/authentication/auth_wrapper.dart';
+import 'package:women_safety_empowerment_app/screens/woman/notifications_page.dart'; 
+import 'package:women_safety_empowerment_app/services/flutter_local_notification.dart';
+
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -71,7 +72,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    // 🔹 Handle notification when app is opened from a terminated state
+    // Handle notification when app is opened from a terminated state
     FirebaseMessaging.instance.getInitialMessage().then((message) {
       if (message != null) {
         // Use the global navigatorKey
@@ -81,7 +82,7 @@ class _MyAppState extends State<MyApp> {
       }
     });
 
-    // 🔹 Handle notification when app is in background & opened
+    // Handle notification when app is in background & opened
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       // Use the global navigatorKey
         navigatorKey.currentState?.push(
@@ -95,7 +96,7 @@ class _MyAppState extends State<MyApp> {
     return Sizer(
       builder: (context, orientation, deviceType) {
         return MaterialApp(
-          // ✅ Use the global navigatorKey here
+          // Use the global navigatorKey here
           navigatorKey: navigatorKey, 
           debugShowCheckedModeBanner: false,
           title: 'Sisters',

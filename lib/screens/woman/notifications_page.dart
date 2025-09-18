@@ -1,8 +1,6 @@
 import 'package:intl/intl.dart';
-import 'package:sizer/sizer.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,11 +8,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
+// Page to display all notifications for the logged-in user
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Get current user's UID
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
@@ -23,6 +23,7 @@ class NotificationsPage extends StatelessWidget {
         backgroundColor: hexToColor("#dddddd"),
         textColor: hexToColor("#4a6741"),
       ),
+      // StreamBuilder to listen to notifications collection in real-time
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('notifications')
@@ -30,14 +31,17 @@ class NotificationsPage extends StatelessWidget {
             .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
+          // Show loading indicator while waiting for data
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // Show message if no notifications exist
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text('No notifications yet.'));
           }
 
+          // Build a list of notification cards
           return ListView(
             children: snapshot.data!.docs.map((doc) {
               Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -63,6 +67,7 @@ class NotificationsPage extends StatelessWidget {
                     DateFormat('EEEE, MMMM d, y, h:mm a').format(dateTime);
               }
 
+              // Build individual notification card
               return _buildNotificationCard(
                 docId: doc.id, // pass the Firestore document ID
                 title: title,
@@ -78,6 +83,7 @@ class NotificationsPage extends StatelessWidget {
     );
   }
 
+  // Helper function to build each notification card
   Widget _buildNotificationCard({
     required String docId,
     required String title,
@@ -91,7 +97,7 @@ class NotificationsPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // 🔹 Title + Delete button in the same row
+          // Title + Delete button in the same row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -120,7 +126,7 @@ class NotificationsPage extends StatelessWidget {
 
           const SizedBox(height: 4),
 
-          // 🔹 Body + Location inline
+          // Body + Location inline
           RichText(
             text: TextSpan(
               style: const TextStyle(color: Colors.black), // default text style

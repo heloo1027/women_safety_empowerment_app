@@ -1,12 +1,13 @@
 // This page is to view service detail that are offered by me
 // User can edit the offered service here and view service request from other users
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'woman_my_offer_service_page.dart';
 import 'woman_my_service_requests_page.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class WomanMyServiceDetailPage extends StatelessWidget {
   final String serviceId;

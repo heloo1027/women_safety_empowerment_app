@@ -1,12 +1,13 @@
 // This is te My Offered Services page to view all services provided by me
 // Users can add a new service here
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'woman_my_services_detail_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'woman_my_offer_service_page.dart';
+import 'woman_my_services_detail_page.dart';
+import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
 
 class WomanMyServicesPage extends StatefulWidget {
   const WomanMyServicesPage({Key? key}) : super(key: key);
@@ -149,14 +150,6 @@ class _WomanMyServicesPageState extends State<WomanMyServicesPage> {
                                 "Price: RM ${data['price']}",
                               ),
                             vSpace(6),
-
-                            // Location
-                            // if (data['location'] != null)
-                            //   Text(
-                            //     "Location: ${data['location']}",
-                            //     style: kSubtitleTextStyle,
-                            //   ),
-                            // vSpace(6),
 
                             // Posted Date
                             if (postedDate.isNotEmpty)

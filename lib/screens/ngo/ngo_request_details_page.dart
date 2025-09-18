@@ -1,9 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'ngo_chat_page.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'package:women_safety_empowerment_app/widgets/common/styles.dart';
-import 'ngo_chat_page.dart';
 
+// Page to display all requests submitted by women for a specific NGO donation
 class RequestDetailsPage extends StatefulWidget {
   final String requestId; // the NGO request document ID
 
@@ -18,6 +20,7 @@ class RequestDetailsPage extends StatefulWidget {
 class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Fetch the name of a woman from Firestore using her user ID
   Future<String> _getWomanName(String womanId) async {
     try {
       final doc =
@@ -32,24 +35,11 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
     }
   }
 
-  Future<void> _markAsComplete(DocumentSnapshot doc, int qty) async {
-    final requestRef =
-        _firestore.collection('contributions').doc(widget.requestId);
-
-    // Update the woman's request status
-    await doc.reference.update({'status': 'Completed'});
-
-    // Increment availableQuantity of NGO request
-    await requestRef.update({'availableQuantity': FieldValue.increment(-qty)});
-
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Request marked completed")));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: buildStyledAppBar(title: "Request Details"),
+      // Listen to real-time updates for requests from women under this NGO contribution
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('contributions')
@@ -62,10 +52,13 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
           }
 
           final requests = snapshot.data!.docs;
+
+          // Show message if there are no requests
           if (requests.isEmpty) {
             return const Center(child: Text("No requests from women yet."));
           }
 
+          // List all requests
           return ListView.builder(
             padding: const EdgeInsets.all(12),
             itemCount: requests.length,
@@ -74,6 +67,7 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
               final data = doc.data() as Map<String, dynamic>;
               final womanId = data['womanId'] ?? '';
 
+              // Fetch woman's name asynchronously if not already stored in the request
               return FutureBuilder<String>(
                 future: _getWomanName(womanId),
                 builder: (context, nameSnapshot) {
@@ -82,6 +76,7 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
 
                   final description = data['description'] ?? '';
 
+                  // Card for each request
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     child: Padding(
@@ -91,6 +86,7 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
                         children: [
                           Row(
                             children: [
+                              // Woman's name
                               Expanded(
                                 child: Text(
                                   womanName,
@@ -104,12 +100,18 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
                             ],
                           ),
                           const SizedBox(height: 6),
+
+                          // Quantity requested
                           Text("Quantity: ${data['quantity'] ?? 0}"),
+
+                          // Optional description
                           if (description.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Text("Description: $description"),
                           ],
                           const SizedBox(height: 6),
+
+                          // Buttons for interaction
                           Wrap(
                             children: [
                               // Chat button (always available)
@@ -130,7 +132,7 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
                               ),
                               const SizedBox(width: 8),
 
-                              // NEW: Reject button (only if status is Pending)
+                              // Reject button (only if status is Pending)
                               if ((data['status'] ?? '') == 'Pending')
                                 ElevatedButton.icon(
                                   onPressed: () async {
@@ -211,28 +213,24 @@ class _NGOCompletedRequestDetailsPageState extends State<RequestDetailsPage> {
   }
 }
 
-// 🔹 custom chip builder
+// custom chip builder
 Widget buildStatusChip(String status) {
   Color color;
   switch (status) {
     case "Completed":
       color = hexToColor("#a3ab94");
-      // textColor = Colors.green.shade800;
       break;
     case "Rejected":
       color = hexToColor("#fdaaaa");
-      // textColor = Colors.red.shade800;
       break;
     default:
       color = hexToColor("#e5ba9f");
-    // textColor = Colors.grey.shade800;
   }
 
   return Chip(
     label: Text(
       status,
       style: TextStyle(
-        // color: textColor,
         fontWeight: FontWeight.bold,
       ),
     ),

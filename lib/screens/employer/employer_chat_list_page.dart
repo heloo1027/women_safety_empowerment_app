@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:women_safety_empowerment_app/utils/utils.dart';
 import 'employer_chat_page.dart'; // import your EmployerChatPage
 
+// Page displaying list of chats for the employer
 class EmployerChatListPage extends StatelessWidget {
   const EmployerChatListPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final User? currentUser = FirebaseAuth.instance.currentUser;
+    // If user is not logged in, show message
     if (currentUser == null) {
       return const Scaffold(
         body: Center(child: Text("Not logged in")),
@@ -20,19 +22,22 @@ class EmployerChatListPage extends StatelessWidget {
 
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
+        // Listen to all chat documents in 'chats' collection
         stream: FirebaseFirestore.instance
             .collection("chats")
-            .snapshots(), // 🔹 Listen to all chats
+            .snapshots(), // Listen to all chats
         builder: (context, snapshot) {
+          // Show loading indicator while fetching data
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // Handle no chat documents
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text("No conversations yet."));
           }
 
-          // 🔹 Filter chats that include this employerId
+          // Filter chats that include this employerId
           final chatDocs = snapshot.data!.docs.where((doc) {
             final chatId = doc.id;
             return chatId.contains(employerId);
@@ -42,17 +47,19 @@ class EmployerChatListPage extends StatelessWidget {
             return const Center(child: Text("No conversations found."));
           }
 
+          // Build list of chat items
           return ListView.builder(
             itemCount: chatDocs.length,
             itemBuilder: (context, index) {
               final chatDoc = chatDocs[index];
               final chatId = chatDoc.id;
 
-              // 🔹 Extract applicantId (the other person in chatId)
+              // Extract applicantId (the other person in chatId)
               final ids = chatId.split("_");
               ids.remove(employerId);
               final applicantId = ids.isNotEmpty ? ids.first : "unknown";
 
+              // Fetch applicant profile info
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
                     .collection('womanProfiles') // applicant profiles
@@ -70,6 +77,7 @@ class EmployerChatListPage extends StatelessWidget {
                   }
 
                   return ListTile(
+                    // Applicant avatar
                     leading: CircleAvatar(
                       backgroundImage:
                           (profileImage != null && profileImage.isNotEmpty)
@@ -80,6 +88,7 @@ class EmployerChatListPage extends StatelessWidget {
                           : null,
                     ),
                     title: Text(applicantName),
+                    // Display last message in chat
                     subtitle: StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('chats')
@@ -99,6 +108,7 @@ class EmployerChatListPage extends StatelessWidget {
                         return const Text("No messages yet");
                       },
                     ),
+                    // Show unread message count
                     trailing: StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection("chats")
@@ -122,11 +132,11 @@ class EmployerChatListPage extends StatelessWidget {
                             ),
                           );
                         }
-                        return const SizedBox.shrink();
+                        return const SizedBox.shrink(); // No unread messages
                       },
                     ),
                     onTap: () async {
-                      // ✅ Mark unread as read for employer
+                      //  Mark unread as read for employer
                       final unreadMessages = await FirebaseFirestore.instance
                           .collection("chats")
                           .doc(chatId)
@@ -139,6 +149,7 @@ class EmployerChatListPage extends StatelessWidget {
                         msg.reference.update({"isRead": true});
                       }
 
+                      // Navigate to EmployerChatPage
                       Navigator.push(
                         context,
                         MaterialPageRoute(
